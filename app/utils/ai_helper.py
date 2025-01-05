@@ -66,6 +66,13 @@ def generate_response(prompt):
         if hasattr(response.candidates[0], 'grounding_metadata') and \
            hasattr(response.candidates[0].grounding_metadata, 'search_entry_point'):
             sources = response.candidates[0].grounding_metadata.search_entry_point.rendered_content
+            
+            # Log each source URL found in the response
+            logger.debug('Search sources found:')
+            for line in sources.split('\n'):
+                if 'http' in line:  # Simple way to identify URLs in the source text
+                    logger.debug(f'Source: {line.strip()}')
+            
             logger.debug('Search sources found, appending to response')
             result += "\n\nSources:\n" + sources
         else:
