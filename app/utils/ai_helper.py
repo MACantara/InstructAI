@@ -45,19 +45,24 @@ def extract_search_metadata(response_candidate):
 def generate_syllabus_prompt(topic, include_objectives=True, include_readings=True):
     """Generate a structured prompt for syllabus creation"""
     prompt = f"""Create a comprehensive syllabus for a course on {topic}. 
+Use Markdown formatting for better structure and readability.
+
 Include the following sections:
 
-1. Course Description
-2. Course Structure
-3. Weekly Topics Breakdown (12-week format)"""
+# Course Description
+
+# Course Structure
+
+# Weekly Topics Breakdown (12-week format)
+Use proper Markdown formatting with headers, lists, and emphasis where appropriate."""
 
     if include_objectives:
-        prompt += "\n4. Learning Objectives and Outcomes"
+        prompt += "\n\n# Learning Objectives and Outcomes"
     
     if include_readings:
-        prompt += "\n5. Required and Recommended Readings"
+        prompt += "\n\n# Required and Recommended Readings"
 
-    prompt += "\n\nFormat the syllabus in a clear, structured manner suitable for academic use."
+    prompt += "\n\nEnsure proper Markdown formatting throughout the syllabus."
     return prompt
 
 def generate_response(prompt_data):
