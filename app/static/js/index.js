@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderSyllabus = (response) => {
         if (response.raw_json) {
-            // Use JSON data for more structured rendering
             const json = response.raw_json;
             const content = `
                 <div class="syllabus-header">
@@ -69,19 +68,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2>Weekly Topics</h2>
                     ${json.weeklyTopics.map(week => `
                         <div class="week-block">
-                            <h3>Week ${week.week}: ${week.topic}</h3>
+                            <h3>Week ${week.week}: ${week.mainTopic}</h3>
                             <div class="week-content">
                                 ${marked.parse(week.description)}
-                                ${week.activities ? `
-                                    <div class="activities">
-                                        <strong>Activities:</strong>
-                                        <ul>
-                                            ${week.activities.map(activity => `
-                                                <li>${activity}</li>
-                                            `).join('')}
-                                        </ul>
-                                    </div>
-                                ` : ''}
+                                <div class="topics-list">
+                                    ${week.topics.map(topic => `
+                                        <div class="topic-item">
+                                            <h4>${topic.subtitle}</h4>
+                                            <ul>
+                                                ${topic.points.map(point => `
+                                                    <li>${point}</li>
+                                                `).join('')}
+                                            </ul>
+                                        </div>
+                                    `).join('')}
+                                </div>
                             </div>
                         </div>
                     `).join('')}
@@ -124,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             return content;
         } else {
-            // Fallback to markdown rendering if no JSON
             return marked.parse(response.text);
         }
     };

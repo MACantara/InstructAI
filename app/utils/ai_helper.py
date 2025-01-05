@@ -58,9 +58,14 @@ def generate_syllabus_prompt(topic, include_objectives=True, include_readings=Tr
     "weeklyTopics": [
         {{
             "week": 1,
-            "topic": "string",
-            "description": "string",
-            "activities": ["string"]
+            "mainTopic": "Topic title",
+            "description": "Overview description",
+            "topics": [
+                {{
+                    "subtitle": "Subtopic title",
+                    "points": ["Important concepts", "Key points"]
+                }}
+            ]
         }}
     ]"""
 
@@ -102,7 +107,7 @@ def validate_json_structure(json_data):
     """Validate the JSON structure matches our expected schema"""
     required_fields = ['title', 'courseDescription', 'courseStructure', 'weeklyTopics']
     course_structure_fields = ['duration', 'format', 'assessment']
-    weekly_topic_fields = ['week', 'topic', 'description', 'activities']
+    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics']
 
     # Check required top-level fields
     if not all(field in json_data for field in required_fields):
@@ -120,6 +125,15 @@ def validate_json_structure(json_data):
         if not all(field in week for field in weekly_topic_fields):
             return False
 
+        if not isinstance(week['topics'], list):
+            return False
+
+        for topic in week['topics']:
+            if not all(field in topic for field in ['subtitle', 'points']):
+                return False
+            if not isinstance(topic['points'], list):
+                return False
+
     return True
 
 def format_json_to_markdown(json_data):
@@ -136,13 +150,14 @@ def format_json_to_markdown(json_data):
     
     markdown += "## Weekly Topics\n"
     for week in json_data['weeklyTopics']:
-        markdown += f"### Week {week['week']}: {week['topic']}\n"
+        markdown += f"### Week {week['week']}: {week['mainTopic']}\n"
         markdown += f"{week['description']}\n\n"
-        if week['activities']:
-            markdown += "**Activities:**\n"
-            for activity in week['activities']:
-                markdown += f"- {activity}\n"
-        markdown += "\n"
+        
+        for topic in week['topics']:
+            markdown += f"#### {topic['subtitle']}\n"
+            for point in topic['points']:
+                markdown += f"- {point}\n"
+            markdown += "\n"
     
     if 'learningObjectives' in json_data:
         markdown += "## Learning Objectives\n"
