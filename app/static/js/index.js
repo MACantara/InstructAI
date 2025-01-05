@@ -40,6 +40,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     };
 
+    const renderMarkdown = (text) => {
+        // Configure marked options
+        marked.setOptions({
+            breaks: true,        // Convert \n to <br>
+            headerIds: true,     // Add IDs to headers for linking
+            gfm: true,          // GitHub Flavored Markdown
+            smartLists: true,    // Better list handling
+            smartypants: true    // Better typography
+        });
+        
+        return marked.parse(text);
+    };
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const topic = topicInput.value.trim();
@@ -66,9 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
             
-            // Update response area with syllabus and sources
+            // Update response area with markdown-rendered syllabus and sources
             responseArea.innerHTML = `
-                <div class="syllabus-content">${data.response.text}</div>
+                <div class="syllabus-content markdown-body">
+                    ${renderMarkdown(data.response.text)}
+                </div>
                 ${renderMetadata(data.response.metadata)}
             `;
             
