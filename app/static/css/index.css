@@ -195,3 +195,104 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Weekly Content */
+.week-content-details {
+    margin-top: var(--spacing-medium);
+    padding: var(--spacing-medium);
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 5px;
+}
+
+.lecture-content {
+    margin-bottom: var(--spacing-medium);
+}
+
+.slides-section,
+.examples-section {
+    margin: var(--spacing-medium) 0;
+    padding: var(--spacing-small);
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid var(--text-color-light);
+}
+
+.resources-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-medium);
+    margin: var(--spacing-medium) 0;
+}
+
+.videos, .articles, .tools {
+    padding: var(--spacing-small);
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid var(--text-color-light);
+}
+
+.exercise-item {
+    margin: var(--spacing-small) 0;
+    padding: var(--spacing-small);
+    border-radius: 5px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.difficulty-beginner { border-color: var(--secondary-color); }
+.difficulty-intermediate { border-color: var(--primary-color); }
+.difficulty-advanced { border-color: #e74c3c; }
+
+.load-content-btn {
+    margin: var(--spacing-medium) 0;
+    padding: var(--spacing-small) var(--spacing-medium);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.load-content-btn:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+.load-content-btn:disabled {
+    background-color: var(--text-color-light);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.bulk-actions {
+    margin-top: var(--spacing-medium);
+    padding: var(--spacing-medium);
+    text-align: center;
+    border-top: 1px solid var(--text-color-light);
+}
+
+.secondary-button {
+    padding: var(--spacing-small) var(--spacing-medium);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.9;
+}
+
+.secondary-button:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+.secondary-button:disabled {
+    background-color: var(--text-color-light);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.secondary-button i {
+    margin-right: 8px;
+}
