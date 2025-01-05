@@ -23,6 +23,11 @@ class Config:
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
+    DEBUG_TB_ENABLED = True
+    DEBUG_TB_INTERCEPT_REDIRECTS = False
+    DEBUG_TB_TEMPLATE_EDITOR_ENABLED = True
+    FLASK_DEBUG = True
+
     @classmethod
     def init_app(cls, app):
         """
@@ -55,6 +60,9 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///dev_database.db')
+    FLASK_ENV = 'development'
+    EXPLAIN_TEMPLATE_LOADING = True
+    TEMPLATES_AUTO_RELOAD = True
 
 class ProductionConfig(Config):
     DEBUG = False
