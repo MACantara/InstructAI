@@ -6,12 +6,12 @@
 
 {% block content %}
 <div class="index-container">
-    <h1 class="index-header">Welcome to Flask Web Template</h1>
-    <p class="index-description">
-        This is a modular Flask web application template designed with modern web development 
-        best practices. Easily extend and customize to suit your project needs.
-    </p>
-    <a href="#" class="cta-button">Get Started</a>
+    <h1 class="index-header">AI Assistant</h1>
+    <div class="ai-interface">
+        <textarea id="prompt" class="prompt-input" placeholder="Enter your question..."></textarea>
+        <button id="generate" class="cta-button">Generate Response</button>
+        <div id="response" class="response-area"></div>
+    </div>
 </div>
 {% endblock %}
 
