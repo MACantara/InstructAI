@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="index-container">
+    <h1 class="index-header">Welcome to Flask Web Template</h1>
+    <p class="index-description">
+        This is a modular Flask web application template designed with modern web development 
+        best practices. Easily extend and customize to suit your project needs.
+    </p>
+    <a href="#" class="cta-button">Get Started</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
