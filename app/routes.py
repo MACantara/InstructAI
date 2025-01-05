@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
 import traceback
 from .utils.ai_helper import generate_response
+from .utils.content_generator import generate_weekly_content
 
 main_bp = Blueprint('main', __name__)
 
@@ -27,5 +28,34 @@ def generate():
     
     except Exception as e:
         current_app.logger.error(f'Error generating response: {str(e)}')
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
+
+@main_bp.route('/generate/week-content', methods=['POST'])
+def generate_week_content():
+    """Generate detailed content for a specific week"""
+    try:
+        data = request.json
+        if not data or 'weekData' not in data:
+            return jsonify({'error': 'No week data provided'}), 400
+
+        current_app.logger.info(f'Generating content for week {data["weekData"].get("week", "unknown")}')
+        
+        # Generate detailed content for the week
+        content = generate_weekly_content(
+            topic=data['weekData'].get('mainTopic', ''),
+            week_data=data['weekData']
+        )
+        
+        if content is None:
+            return jsonify({'error': 'Failed to generate weekly content'}), 500
+            
+        return jsonify({
+            'content': content,
+            'week': data['weekData'].get('week')
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating weekly content: {str(e)}')
         current_app.logger.error(traceback.format_exc())
         return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
