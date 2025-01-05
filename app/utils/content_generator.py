@@ -6,6 +6,40 @@ import json
 
 logger = logging.getLogger(__name__)
 
+def extract_content_metadata(response_candidate, week_number):
+    """Extract metadata specific to weekly content"""
+    metadata = {}
+    
+    if hasattr(response_candidate, 'grounding_metadata'):
+        meta = response_candidate.grounding_metadata
+        
+        if meta.grounding_chunks:
+            for chunk in meta.grounding_chunks:
+                chunk_data = chunk.model_dump()
+                if 'web' in chunk_data:
+                    source_url = chunk_data['web'].get('uri')
+                    source_title = chunk_data['web'].get('title')
+                    
+                    # Add source to appropriate section based on URL pattern
+                    if 'youtube.com' in source_url or 'vimeo.com' in source_url:
+                        if 'videos' not in metadata:
+                            metadata['videos'] = []
+                        metadata['videos'].append({
+                            'title': source_title,
+                            'url': source_url,
+                            'description': f'Referenced in Week {week_number} content'
+                        })
+                    else:
+                        if 'articles' not in metadata:
+                            metadata['articles'] = []
+                        metadata['articles'].append({
+                            'title': source_title,
+                            'url': source_url,
+                            'relevance': f'Source material for Week {week_number}'
+                        })
+    
+    return metadata
+
 def generate_weekly_content(topic, week_data):
     """Generate detailed content for a specific weekly topic"""
     logger.debug(f"Received week data: {week_data}")
@@ -91,8 +125,20 @@ def generate_weekly_content(topic, week_data):
                     json_str = json_str[:json_str.rfind('}')+1]
                     
                 content = json.loads(json_str)
-                logger.debug(f"Successfully generated content for week {week_data.get('week')}")
+                
+                # Extract metadata and integrate with content
+                metadata = extract_content_metadata(response.candidates[0], week_data.get('week'))
+                
+                # Update content with metadata sources
+                if 'videos' in metadata:
+                    content['content']['resources']['videos'].extend(metadata['videos'])
+                
+                if 'articles' in metadata:
+                    content['content']['resources']['articles'].extend(metadata['articles'])
+                
+                logger.debug(f"Successfully generated content for week {week_data.get('week')} with {len(metadata.get('videos', []))} videos and {len(metadata.get('articles', []))} articles from metadata")
                 return content
+                
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse JSON response: {e}")
                 logger.debug(f"Raw response: {json_str}")

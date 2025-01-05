@@ -1,6 +1,15 @@
 export const renderWeeklyContent = (weekContent) => {
     if (!weekContent) return '';
     
+    // Sort videos and articles by source (AI-generated vs metadata)
+    const sortResources = (resources, type) => {
+        return resources[type].sort((a, b) => {
+            const aFromMeta = a.url?.includes('vertexaisearch.cloud.google.com') || false;
+            const bFromMeta = b.url?.includes('vertexaisearch.cloud.google.com') || false;
+            return aFromMeta === bFromMeta ? 0 : aFromMeta ? -1 : 1;
+        });
+    };
+    
     return `
         <div class="week-content-details">
             <div class="lecture-content">
@@ -31,8 +40,8 @@ export const renderWeeklyContent = (weekContent) => {
                     <div class="videos">
                         <h5>📺 Videos</h5>
                         <ul>
-                            ${weekContent.content.resources.videos.map(video => `
-                                <li>
+                            ${sortResources(weekContent.content.resources, 'videos').map(video => `
+                                <li class="${video.url?.includes('vertexaisearch') ? 'meta-source' : ''}">
                                     <a href="${video.url}" target="_blank" rel="noopener">
                                         ${video.title}
                                     </a>
@@ -47,8 +56,8 @@ export const renderWeeklyContent = (weekContent) => {
                     <div class="articles">
                         <h5>📚 Articles</h5>
                         <ul>
-                            ${weekContent.content.resources.articles.map(article => `
-                                <li>
+                            ${sortResources(weekContent.content.resources, 'articles').map(article => `
+                                <li class="${article.url?.includes('vertexaisearch') ? 'meta-source' : ''}">
                                     <a href="${article.url}" target="_blank" rel="noopener">
                                         ${article.title}
                                     </a>
