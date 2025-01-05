@@ -8,53 +8,63 @@ logger = logging.getLogger(__name__)
 
 def generate_weekly_content(topic, week_data):
     """Generate detailed content for a specific weekly topic"""
-    prompt = f"""Generate comprehensive course content for Week {week_data['week']}: {week_data['mainTopic']}
-    following this JSON structure:
+    logger.debug(f"Received week data: {week_data}")
+    
+    if not week_data or not isinstance(week_data, dict):
+        logger.error("Invalid week data format")
+        return None
+        
+    try:
+        prompt = f"""Generate comprehensive course content for Week {week_data.get('week', '?')}: {week_data.get('mainTopic', 'Unknown')}
+        following this JSON structure:
 
-    {{
-        "week": {week_data['week']},
-        "topic": "{week_data['mainTopic']}",
-        "content": {{
-            "lecture": {{
-                "notes": "Detailed lecture notes in markdown",
-                "slides": ["Key points for slides"],
-                "examples": ["Code or practical examples"]
-            }},
-            "resources": {{
-                "videos": [
+        {{
+            "week": {week_data.get('week', '?')},
+            "topic": "{week_data.get('mainTopic', 'Unknown')}",
+            "content": {{
+                "lecture": {{
+                    "notes": "Detailed lecture notes in markdown",
+                    "slides": ["Key points for slides"],
+                    "examples": ["Code or practical examples"]
+                }},
+                "resources": {{
+                    "videos": [
+                        {{
+                            "title": "Video title",
+                            "url": "Video URL",
+                            "description": "Brief description"
+                        }}
+                    ],
+                    "articles": [
+                        {{
+                            "title": "Article title",
+                            "url": "Article URL",
+                            "relevance": "Why this is important"
+                        }}
+                    ],
+                    "tools": [
+                        {{
+                            "name": "Tool name",
+                            "url": "Tool URL",
+                            "purpose": "How it's used in this topic"
+                        }}
+                    ]
+                }},
+                "exercises": [
                     {{
-                        "title": "Video title",
-                        "url": "Video URL",
-                        "description": "Brief description"
-                    }}
-                ],
-                "articles": [
-                    {{
-                        "title": "Article title",
-                        "url": "Article URL",
-                        "relevance": "Why this is important"
-                    }}
-                ],
-                "tools": [
-                    {{
-                        "name": "Tool name",
-                        "url": "Tool URL",
-                        "purpose": "How it's used in this topic"
+                        "title": "Exercise title",
+                        "description": "Exercise description",
+                        "difficulty": "beginner|intermediate|advanced",
+                        "instructions": ["Step-by-step instructions"]
                     }}
                 ]
-            }},
-            "exercises": [
-                {{
-                    "title": "Exercise title",
-                    "description": "Exercise description",
-                    "difficulty": "beginner|intermediate|advanced",
-                    "instructions": ["Step-by-step instructions"]
-                }}
-            ]
+            }}
         }}
-    }}"""
 
-    try:
+        Use the following subtopics as guidance:
+        {', '.join([t.get('subtitle', '') for t in week_data.get('topics', [])])}
+        """
+
         client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
         config = GenerateContentConfig(
             temperature=0.7,
@@ -72,9 +82,25 @@ def generate_weekly_content(topic, week_data):
         )
 
         if response and response.candidates:
-            return json.loads(response.candidates[0].content.parts[0].text)
+            try:
+                json_str = response.candidates[0].content.parts[0].text.strip()
+                # Clean JSON string
+                if not json_str.startswith('{'):
+                    json_str = json_str[json_str.find('{'):]
+                if not json_str.endswith('}'):
+                    json_str = json_str[:json_str.rfind('}')+1]
+                    
+                content = json.loads(json_str)
+                logger.debug(f"Successfully generated content for week {week_data.get('week')}")
+                return content
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON response: {e}")
+                logger.debug(f"Raw response: {json_str}")
+                return None
         
+        logger.warning("No response generated from API")
         return None
+        
     except Exception as e:
-        logger.error(f"Error generating content for week {week_data['week']}: {str(e)}")
+        logger.error(f"Error generating content: {str(e)}", exc_info=True)
         return None
