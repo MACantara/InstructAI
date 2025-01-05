@@ -1,7 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('syllabusForm');
     const generateBtn = document.getElementById('generate');
-    const promptInput = document.getElementById('prompt');
+    const topicInput = document.getElementById('topic');
     const responseArea = document.getElementById('response');
+    const includeObjectives = document.getElementById('includeObjectives');
+    const includeReadings = document.getElementById('includeReadings');
 
     const renderSourceLink = (source, title) => {
         // Extract domain from the URL for display
@@ -37,19 +40,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     };
 
-    generateBtn.addEventListener('click', async () => {
-        const prompt = promptInput.value.trim();
-        if (!prompt) return;
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const topic = topicInput.value.trim();
+        if (!topic) return;
 
         try {
             generateBtn.disabled = true;
-            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-            responseArea.innerHTML = '<div class="loading">🔍 Searching and generating response...</div>';
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Syllabus...';
+            responseArea.innerHTML = '<div class="loading">🎓 Creating your syllabus...</div>';
 
             const response = await fetch('/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt })
+                body: JSON.stringify({
+                    topic: topic,
+                    include_objectives: includeObjectives.checked,
+                    include_readings: includeReadings.checked
+                })
             });
 
             const data = await response.json();
@@ -58,9 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
             
-            // Update response area with main text and metadata
+            // Update response area with syllabus and sources
             responseArea.innerHTML = `
-                <div class="response-text">${data.response.text}</div>
+                <div class="syllabus-content">${data.response.text}</div>
                 ${renderMetadata(data.response.metadata)}
             `;
             
@@ -69,12 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
             responseArea.innerHTML = `
                 <div class="error-message">
                     <i class="fas fa-exclamation-circle"></i>
-                    Error generating response: ${error.message}
+                    Error generating syllabus: ${error.message}
                 </div>
             `;
         } finally {
             generateBtn.disabled = false;
-            generateBtn.innerHTML = 'Generate Response';
+            generateBtn.innerHTML = 'Generate Syllabus';
         }
     });
 });
