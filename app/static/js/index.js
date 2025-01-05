@@ -22,18 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let html = '<div class="metadata-section">';
         
-        // Render search queries
-        if (metadata.search_queries?.length > 0) {
-            html += '<div class="search-queries">';
-            html += '<h4>🔍 Search Queries:</h4>';
-            html += '<ul>';
-            metadata.search_queries.forEach(query => {
-                html += `<li>${query}</li>`;
-            });
-            html += '</ul></div>';
-        }
-        
-        // Render all sources in a single container
+        // Render sources in grid
         if (metadata.chunks?.length > 0) {
             html += '<div class="sources-container">';
             html += '<h4>📚 Sources:</h4>';

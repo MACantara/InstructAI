@@ -26,11 +26,6 @@ def extract_search_metadata(response_candidate):
     if hasattr(response_candidate, 'grounding_metadata'):
         meta = response_candidate.grounding_metadata
         
-        # Extract search queries
-        if meta.web_search_queries:
-            metadata['search_queries'] = meta.web_search_queries
-            logger.debug(f'Search queries used: {meta.web_search_queries}')
-            
         # Extract grounding chunks focusing on web title and URI
         if meta.grounding_chunks:
             metadata['chunks'] = []
