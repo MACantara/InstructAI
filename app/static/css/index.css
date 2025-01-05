@@ -46,3 +46,29 @@
         padding: 0 var(--spacing-small);
     }
 }
+
+.ai-interface {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-medium);
+}
+
+.prompt-input {
+    width: 100%;
+    height: 100px;
+    padding: var(--spacing-small);
+    margin-bottom: var(--spacing-medium);
+    border: 1px solid var(--text-color-light);
+    border-radius: 5px;
+    resize: vertical;
+}
+
+.response-area {
+    margin-top: var(--spacing-medium);
+    padding: var(--spacing-medium);
+    background-color: white;
+    border-radius: 5px;
+    min-height: 100px;
+    white-space: pre-wrap;
+}
