@@ -39,23 +39,33 @@ def generate_week_content():
         if not data or 'weekData' not in data:
             return jsonify({'error': 'No week data provided'}), 400
 
-        current_app.logger.info(f'Generating content for week {data["weekData"].get("week", "unknown")}')
+        week_data = data['weekData']
+        if not isinstance(week_data, dict):
+            return jsonify({'error': 'Invalid week data format'}), 400
+
+        current_app.logger.info(f'Generating content for week {week_data.get("week", "unknown")}')
         
         # Generate detailed content for the week
         content = generate_weekly_content(
-            topic=data['weekData'].get('mainTopic', ''),
-            week_data=data['weekData']
+            topic=week_data.get('mainTopic', ''),
+            week_data=week_data
         )
         
         if content is None:
-            return jsonify({'error': 'Failed to generate weekly content'}), 500
+            return jsonify({
+                'error': 'Failed to generate weekly content',
+                'week': week_data.get('week')
+            }), 500
             
         return jsonify({
             'content': content,
-            'week': data['weekData'].get('week')
+            'week': week_data.get('week')
         })
         
     except Exception as e:
         current_app.logger.error(f'Error generating weekly content: {str(e)}')
         current_app.logger.error(traceback.format_exc())
-        return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
+        return jsonify({
+            'error': f'Internal server error: {str(e)}',
+            'details': traceback.format_exc()
+        }), 500
