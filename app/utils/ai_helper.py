@@ -42,12 +42,38 @@ def extract_search_metadata(response_candidate):
     
     return metadata
 
-def generate_response(prompt):
+def generate_syllabus_prompt(topic, include_objectives=True, include_readings=True):
+    """Generate a structured prompt for syllabus creation"""
+    prompt = f"""Create a comprehensive syllabus for a course on {topic}. 
+Include the following sections:
+
+1. Course Description
+2. Course Structure
+3. Weekly Topics Breakdown (12-week format)"""
+
+    if include_objectives:
+        prompt += "\n4. Learning Objectives and Outcomes"
+    
+    if include_readings:
+        prompt += "\n5. Required and Recommended Readings"
+
+    prompt += "\n\nFormat the syllabus in a clear, structured manner suitable for academic use."
+    return prompt
+
+def generate_response(prompt_data):
     """Generate response using Gemini with Google Search integration"""
-    logger.info(f'Generating response for prompt: "{prompt[:50]}..."')
+    logger.info(f'Generating syllabus for topic: "{prompt_data["topic"][:50]}..."')
     
     try:
         client = init_gemini()
+        
+        # Generate structured prompt
+        full_prompt = generate_syllabus_prompt(
+            prompt_data["topic"],
+            prompt_data.get("include_objectives", True),
+            prompt_data.get("include_readings", True)
+        )
+        
         model_id = "gemini-2.0-flash-exp"
         
         logger.debug('Initializing Google Search tool')
@@ -72,7 +98,7 @@ def generate_response(prompt):
         logger.debug('Sending request to Gemini API')
         response = client.models.generate_content(
             model=model_id,
-            contents=Part.from_text(prompt),
+            contents=Part.from_text(full_prompt),
             config=config
         )
         
