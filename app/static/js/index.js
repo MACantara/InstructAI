@@ -242,8 +242,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return marked.parse(text);
     };
 
+    const openWeekContent = (weekNumber, topic, content) => {
+        const contentHtml = renderWeeklyContent(content);
+        const params = new URLSearchParams({
+            content: contentHtml,
+            topic: topic
+        });
+        window.open(`/week-content/${weekNumber}?${params}`, `week${weekNumber}`,
+            'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
+    };
+
     const generateAllWeeklyContent = async (weeks, syllabusData) => {
-        const bulkActionsDiv = document.getElementById('bulk-actions');
         const generateAllBtn = document.getElementById('generateAllContent');
         let completedCount = 0;
         
@@ -252,8 +261,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
         try {
             for (const week of weeks) {
-                const weekContainer = document.querySelector(`[data-week="${week.week}"]`).parentElement;
-                weekContainer.innerHTML = '<div class="loading">Generating content...</div>';
+                const weekContainer = document.querySelector(`div.week-block:nth-child(${week.week}) .week-content`);
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading';
+                loadingDiv.innerHTML = 'Generating content...';
+                weekContainer.appendChild(loadingDiv);
     
                 try {
                     const contentResponse = await fetch('/generate/week-content', {
@@ -265,15 +277,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await contentResponse.json();
                     if (data.error) throw new Error(data.error);
                     
-                    weekContainer.innerHTML = renderWeeklyContent(data.content);
+                    // Replace loading div with view button
+                    const viewButton = document.createElement('button');
+                    viewButton.className = 'view-content-btn';
+                    viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
+                    viewButton.onclick = () => openWeekContent(week.week, week.mainTopic, data.content);
+                    
+                    loadingDiv.replaceWith(viewButton);
                     completedCount++;
                     generateAllBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating Content (${completedCount}/${weeks.length})`;
                     
                 } catch (error) {
-                    weekContainer.innerHTML = `
-                        <div class="error-message">
-                            <i class="fas fa-exclamation-circle"></i> Failed to generate content
-                        </div>`;
+                    loadingDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Failed to generate content</div>';
                     console.error(`Error generating content for week ${week.week}:`, error);
                 }
             }
@@ -329,6 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 generateAllWeeklyContent(data.response.raw_json.weeklyTopics, data.response.raw_json);
             });
             
+            // Store syllabus data globally
+            window.syllabusData = data.response.raw_json;
+            
         } catch (error) {
             console.error('Error:', error);
             responseArea.innerHTML = `
@@ -344,14 +362,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Add event listener for loading content
-    document.querySelectorAll('.load-content-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const weekNum = e.target.dataset.week;
-            const weekData = response.raw_json.weeklyTopics.find(w => w.week == weekNum);
+    document.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('load-content-btn')) {
+            const btn = e.target;
+            const weekNum = btn.dataset.week;
+            const weekData = window.syllabusData.weeklyTopics.find(w => w.week == weekNum);
             
             try {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
                 
                 const contentResponse = await fetch('/generate/week-content', {
                     method: 'POST',
@@ -362,12 +381,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await contentResponse.json();
                 if (data.error) throw new Error(data.error);
                 
-                const contentHtml = renderWeeklyContent(data.content);
-                btn.parentElement.innerHTML = contentHtml;
+                // Replace button with view button
+                const viewButton = document.createElement('button');
+                viewButton.className = 'view-content-btn';
+                viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
+                viewButton.onclick = () => openWeekContent(weekNum, weekData.mainTopic, data.content);
+                
+                btn.replaceWith(viewButton);
             } catch (error) {
                 console.error('Error:', error);
-                btn.innerHTML = 'Error loading content';
+                btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error generating content';
             }
-        });
+        }
     });
 });
