@@ -296,3 +296,27 @@
 .secondary-button i {
     margin-right: 8px;
 }
+
+.view-content-btn {
+    margin: var(--spacing-medium) 0;
+    padding: var(--spacing-small) var(--spacing-medium);
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.view-content-btn:hover {
+    background-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--box-shadow-default);
+}
+
+.view-content-btn i {
+    font-size: 0.9em;
+}
