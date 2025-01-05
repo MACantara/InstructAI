@@ -69,3 +69,16 @@ def generate_week_content():
             'error': f'Internal server error: {str(e)}',
             'details': traceback.format_exc()
         }), 500
+
+@main_bp.route('/week-content/<int:week_number>')
+def view_week_content(week_number):
+    try:
+        content = request.args.get('content', '')
+        topic = request.args.get('topic', '')
+        return render_template('week_content.html', 
+                             week_number=week_number,
+                             topic=topic,
+                             content=content)
+    except Exception as e:
+        current_app.logger.error(f'Error displaying week content: {str(e)}')
+        return jsonify({'error': 'Failed to display content'}), 500
