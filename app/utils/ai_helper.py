@@ -3,7 +3,10 @@ from google.genai.types import Tool, GenerateContentConfig, GoogleSearch, Part
 from flask import current_app
 import logging
 
+# Configure logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Ensure debug logs are captured
+logger.propagate = False
 
 def init_gemini():
     """Initialize Gemini client"""
