@@ -33,15 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '</ul></div>';
         }
         
-        // Render sources
+        // Render all sources in a single container
         if (metadata.chunks?.length > 0) {
-            html += '<div class="grounding-chunks">';
+            html += '<div class="sources-container">';
             html += '<h4>📚 Sources:</h4>';
-            html += '<div class="source-list">';
+            html += '<div class="sources-grid">';
             metadata.chunks.forEach(chunk => {
-                html += `<div class="source-item">
-                    ${renderSourceLink(chunk.source, chunk.title)}
-                </div>`;
+                html += renderSourceLink(chunk.source, chunk.title);
             });
             html += '</div></div>';
         }
