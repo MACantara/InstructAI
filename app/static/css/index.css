@@ -71,4 +71,22 @@
     border-radius: 5px;
     min-height: 100px;
     white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.sources-section {
+    margin-top: var(--spacing-medium);
+    padding-top: var(--spacing-medium);
+    border-top: 1px solid var(--text-color-light);
+    font-size: 0.9em;
+    color: var(--text-color-light);
+}
+
+.source-link {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.source-link:hover {
+    text-decoration: underline;
 }
