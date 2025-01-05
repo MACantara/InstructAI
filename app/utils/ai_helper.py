@@ -26,7 +26,7 @@ def generate_response(prompt):
             candidate_count=1,
             tools=[google_search_tool],
             response_modalities=["TEXT"],
-            max_output_tokens=100,
+            max_output_tokens=8192,
             stop_sequences=["STOP!"],
             presence_penalty=0.0,
             frequency_penalty=0.0,
