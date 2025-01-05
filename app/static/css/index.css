@@ -14,11 +14,46 @@
     text-align: center;
 }
 
-.index-description {
-    color: var(--text-color-light);
-    max-width: 600px;
-    text-align: center;
-    margin-bottom: var(--spacing-large);
+.ai-interface {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-medium);
+}
+
+/* Form Elements */
+.input-group {
+    margin-bottom: var(--spacing-medium);
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: var(--spacing-small);
+    color: var(--text-color-dark);
+    font-weight: bold;
+}
+
+.prompt-input {
+    width: 100%;
+    height: 100px;
+    padding: var(--spacing-small);
+    margin-bottom: var(--spacing-medium);
+    border: 1px solid var(--text-color-light);
+    border-radius: 5px;
+    resize: vertical;
+}
+
+.options-group {
+    margin-bottom: var(--spacing-medium);
+    display: flex;
+    gap: var(--spacing-medium);
+}
+
+.options-group label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-small);
+    cursor: pointer;
 }
 
 .cta-button {
@@ -36,44 +71,17 @@
     background-color: var(--primary-color);
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .index-header {
-        font-size: calc(var(--font-size-heading) * 0.9);
-    }
-    
-    .index-description {
-        padding: 0 var(--spacing-small);
-    }
-}
-
-.ai-interface {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: var(--spacing-medium);
-}
-
-.prompt-input {
-    width: 100%;
-    height: 100px;
-    padding: var(--spacing-small);
-    margin-bottom: var(--spacing-medium);
-    border: 1px solid var(--text-color-light);
-    border-radius: 5px;
-    resize: vertical;
-}
-
+/* Response Area */
 .response-area {
     margin-top: var(--spacing-medium);
     padding: var(--spacing-medium);
     background-color: white;
     border-radius: 5px;
     min-height: 100px;
-    white-space: pre-wrap;
     line-height: 1.6;
 }
 
+/* Sources Section */
 .sources-container {
     margin-top: var(--spacing-medium);
     padding: var(--spacing-medium);
@@ -116,98 +124,50 @@
     margin-right: 5px;
 }
 
-.input-group {
-    margin-bottom: var(--spacing-medium);
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: var(--spacing-small);
-    color: var(--text-color-dark);
-    font-weight: bold;
-}
-
-.options-group {
-    margin-bottom: var(--spacing-medium);
-    display: flex;
-    gap: var(--spacing-medium);
-}
-
-.options-group label {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-small);
-    cursor: pointer;
-}
-
-.syllabus-content {
-    font-family: var(--font-family-primary);
-    line-height: 1.8;
-}
-
-.syllabus-content h1, 
-.syllabus-content h2, 
-.syllabus-content h3 {
-    color: var(--primary-color);
-    margin: var(--spacing-medium) 0 var(--spacing-small);
-}
-
-.syllabus-content ul,
-.syllabus-content ol {
-    padding-left: 2em;
-    margin: var(--spacing-small) 0;
-}
-
+/* Markdown Styling */
 .markdown-body {
     font-family: var(--font-family-primary);
     line-height: 1.6;
     color: var(--text-color-dark);
-    margin: 0;  /* Remove default margins */
+    margin: 0;
 }
 
 .markdown-body h1 {
     font-size: 1.8em;
     border-bottom: 2px solid var(--primary-color);
     padding-bottom: 0.2em;
-    margin: 0;  /* Remove margins */
+    margin: 0;
 }
 
 .markdown-body h2 {
     font-size: 1.4em;
     border-bottom: 1px solid var(--text-color-light);
     padding-bottom: 0.2em;
-    margin: 0;  /* Remove margins */
+    margin: 0;
 }
 
 .markdown-body h3 {
     font-size: 1.2em;
-    margin: 0;  /* Remove margins */
+    margin: 0;
 }
 
 .markdown-body ul,
 .markdown-body ol {
     padding-left: 1.5em;
-    margin: 0;  /* Remove margins */
+    margin: 0;
 }
 
 .markdown-body li {
-    margin: 0;  /* Remove margins */
+    margin: 0;
 }
 
 .markdown-body p {
-    margin: 0;  /* Remove margins */
-}
-
-.markdown-body pre {
-    background-color: rgba(0, 0, 0, 0.05);
-    padding: 1em;
-    border-radius: 5px;
-    overflow-x: auto;
+    margin: 0;
 }
 
 .markdown-body blockquote {
     border-left: 4px solid var(--primary-color);
-    margin: 0;  /* Remove margins */
+    margin: 0;
     padding: 0.3em 0.8em;
     background-color: rgba(0, 0, 0, 0.05);
 }
@@ -215,7 +175,7 @@
 .markdown-body table {
     border-collapse: collapse;
     width: 100%;
-    margin: 0;  /* Remove margins */
+    margin: 0;
 }
 
 .markdown-body th,
@@ -229,6 +189,7 @@
     background-color: rgba(0, 0, 0, 0.05);
 }
 
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .sources-grid {
         grid-template-columns: 1fr;
