@@ -19,6 +19,34 @@ def init_gemini():
         logger.error(f'Failed to initialize Gemini client: {str(e)}')
         raise
 
+def extract_search_metadata(response_candidate):
+    """Extract and structure search metadata from response"""
+    metadata = {}
+    
+    if hasattr(response_candidate, 'grounding_metadata'):
+        meta = response_candidate.grounding_metadata
+        
+        # Extract search queries
+        if meta.web_search_queries:
+            metadata['search_queries'] = meta.web_search_queries
+            logger.debug(f'Search queries used: {meta.web_search_queries}')
+            
+        # Extract grounding chunks focusing on web title and URI
+        if meta.grounding_chunks:
+            metadata['chunks'] = []
+            logger.debug('Grounding chunks found:')
+            for chunk in meta.grounding_chunks:
+                chunk_data = chunk.model_dump()
+                if 'web' in chunk_data:
+                    web_data = {
+                        'title': chunk_data['web'].get('title', 'Unknown title'),
+                        'source': chunk_data['web'].get('uri', 'Unknown source')
+                    }
+                    metadata['chunks'].append(web_data)
+                    logger.debug(f"Source: {web_data['title']} - {web_data['source']}")
+    
+    return metadata
+
 def generate_response(prompt):
     """Generate response using Gemini with Google Search integration"""
     logger.info(f'Generating response for prompt: "{prompt[:50]}..."')
@@ -55,7 +83,7 @@ def generate_response(prompt):
         
         if not response or not response.candidates:
             logger.warning('No response generated from API')
-            return "No response generated"
+            return {"text": "No response generated", "metadata": {}}
         
         logger.debug('Processing response and metadata')
         result = response.candidates[0].content.parts[0].text
@@ -63,23 +91,13 @@ def generate_response(prompt):
         # Log response length for monitoring
         logger.debug(f'Response length: {len(result)} characters')
         
-        if hasattr(response.candidates[0], 'grounding_metadata') and \
-           hasattr(response.candidates[0].grounding_metadata, 'search_entry_point'):
-            sources = response.candidates[0].grounding_metadata.search_entry_point.rendered_content
-            
-            # Log each source URL found in the response
-            logger.debug('Search sources found:')
-            for line in sources.split('\n'):
-                if 'http' in line:  # Simple way to identify URLs in the source text
-                    logger.debug(f'Source: {line.strip()}')
-            
-            logger.debug('Search sources found, appending to response')
-            result += "\n\nSources:\n" + sources
-        else:
-            logger.debug('No search sources found in response')
+        # Extract and structure metadata
+        metadata = extract_search_metadata(response.candidates[0])
         
-        logger.info('Response generated successfully')
-        return result
+        return {
+            "text": result,
+            "metadata": metadata
+        }
         
     except Exception as e:
         logger.error(f'Error generating response: {str(e)}', exc_info=True)
