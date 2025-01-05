@@ -17,12 +17,12 @@ def trigger_error():
 @main_bp.route('/generate', methods=['POST'])
 def generate():
     try:
-        prompt = request.json.get('prompt')
-        if not prompt:
-            return jsonify({'error': 'No prompt provided'}), 400
+        data = request.json
+        if not data or 'topic' not in data:
+            return jsonify({'error': 'No topic provided'}), 400
         
-        current_app.logger.info(f'Generating response for prompt: {prompt}')
-        response = generate_response(prompt)
+        current_app.logger.info(f'Generating syllabus for topic: {data["topic"]}')
+        response = generate_response(data)
         return jsonify({'response': response})
     
     except Exception as e:
