@@ -38,5 +38,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modules/renderer.js') }}" type="module"></script>
+<script src="{{ url_for('static', filename='js/modules/weekContent.js') }}" type="module"></script>
+<script src="{{ url_for('static', filename='js/modules/syllabus.js') }}" type="module"></script>
+<script src="{{ url_for('static', filename='js/index.js') }}" type="module"></script>
 {% endblock %}
