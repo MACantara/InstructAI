@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Week {{ week_number }} - {{ topic }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/week_content.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="week-container">
+    <div class="week-header">
+        <h1>Week {{ week_number }}: {{ topic }}</h1>
+        <a href="javascript:window.close();" class="close-btn">
+            <i class="fas fa-times"></i> Close
+        </a>
+    </div>
+    <div class="week-content-details">
+        {{ content|safe }}
+    </div>
+</div>
+{% endblock %}
