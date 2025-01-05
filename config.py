@@ -21,6 +21,7 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
     @classmethod
     def init_app(cls, app):
@@ -40,7 +41,8 @@ class Config:
             'MAIL_PORT', 
             'MAIL_USE_TLS',
             'MAIL_USERNAME', 
-            'MAIL_PASSWORD'
+            'MAIL_PASSWORD',
+            'GEMINI_API_KEY'
         ]
 
         for config in optional_configs:
