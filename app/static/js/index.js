@@ -40,6 +40,102 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     };
 
+    const renderWeeklyContent = (weekContent) => {
+        if (!weekContent) return '';
+        
+        return `
+            <div class="week-content-details">
+                <div class="lecture-content">
+                    <h4>Lecture Materials</h4>
+                    ${marked.parse(weekContent.content.lecture.notes)}
+                    
+                    <div class="slides-section">
+                        <h5>Key Points</h5>
+                        <ul>
+                            ${weekContent.content.lecture.slides.map(slide => `
+                                <li>${slide}</li>
+                            `).join('')}
+                        </ul>
+                    </div>
+    
+                    ${weekContent.content.lecture.examples.length > 0 ? `
+                        <div class="examples-section">
+                            <h5>Examples</h5>
+                            <pre><code>${weekContent.content.lecture.examples.join('\n\n')}</code></pre>
+                        </div>
+                    ` : ''}
+                </div>
+    
+                <div class="resources-section">
+                    <h4>Additional Resources</h4>
+                    
+                    ${weekContent.content.resources.videos.length > 0 ? `
+                        <div class="videos">
+                            <h5>📺 Videos</h5>
+                            <ul>
+                                ${weekContent.content.resources.videos.map(video => `
+                                    <li>
+                                        <a href="${video.url}" target="_blank" rel="noopener">
+                                            ${video.title}
+                                        </a>
+                                        - ${video.description}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+    
+                    ${weekContent.content.resources.articles.length > 0 ? `
+                        <div class="articles">
+                            <h5>📚 Articles</h5>
+                            <ul>
+                                ${weekContent.content.resources.articles.map(article => `
+                                    <li>
+                                        <a href="${article.url}" target="_blank" rel="noopener">
+                                            ${article.title}
+                                        </a>
+                                        - ${article.relevance}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+    
+                    ${weekContent.content.resources.tools.length > 0 ? `
+                        <div class="tools">
+                            <h5>🛠️ Tools</h5>
+                            <ul>
+                                ${weekContent.content.resources.tools.map(tool => `
+                                    <li>
+                                        <a href="${tool.url}" target="_blank" rel="noopener">
+                                            ${tool.name}
+                                        </a>
+                                        - ${tool.purpose}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+    
+                <div class="exercises-section">
+                    <h4>Exercises</h4>
+                    ${weekContent.content.exercises.map(exercise => `
+                        <div class="exercise-item difficulty-${exercise.difficulty}">
+                            <h5>${exercise.title}</h5>
+                            <p>${exercise.description}</p>
+                            <ol>
+                                ${exercise.instructions.map(instruction => `
+                                    <li>${instruction}</li>
+                                `).join('')}
+                            </ol>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    };
+
     const renderSyllabus = (response) => {
         if (response.raw_json) {
             const json = response.raw_json;
@@ -83,6 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                     `).join('')}
                                 </div>
+                                ${response.weeklyContent && response.weeklyContent[week.week] ? 
+                                    renderWeeklyContent(response.weeklyContent[week.week]) : 
+                                    '<button class="load-content-btn" data-week="' + week.week + '">Load Detailed Content</button>'
+                                }
                             </div>
                         </div>
                     `).join('')}
@@ -142,6 +242,50 @@ document.addEventListener('DOMContentLoaded', () => {
         return marked.parse(text);
     };
 
+    const generateAllWeeklyContent = async (weeks, syllabusData) => {
+        const bulkActionsDiv = document.getElementById('bulk-actions');
+        const generateAllBtn = document.getElementById('generateAllContent');
+        let completedCount = 0;
+        
+        generateAllBtn.disabled = true;
+        generateAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Content (0/' + weeks.length + ')';
+    
+        try {
+            for (const week of weeks) {
+                const weekContainer = document.querySelector(`[data-week="${week.week}"]`).parentElement;
+                weekContainer.innerHTML = '<div class="loading">Generating content...</div>';
+    
+                try {
+                    const contentResponse = await fetch('/generate/week-content', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ weekData: week })
+                    });
+                    
+                    const data = await contentResponse.json();
+                    if (data.error) throw new Error(data.error);
+                    
+                    weekContainer.innerHTML = renderWeeklyContent(data.content);
+                    completedCount++;
+                    generateAllBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating Content (${completedCount}/${weeks.length})`;
+                    
+                } catch (error) {
+                    weekContainer.innerHTML = `
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i> Failed to generate content
+                        </div>`;
+                    console.error(`Error generating content for week ${week.week}:`, error);
+                }
+            }
+        } finally {
+            generateAllBtn.disabled = false;
+            generateAllBtn.innerHTML = '<i class="fas fa-check"></i> Content Generation Complete';
+            setTimeout(() => {
+                generateAllBtn.innerHTML = '<i class="fas fa-list-check"></i> Regenerate All Weekly Content';
+            }, 3000);
+        }
+    };
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const topic = topicInput.value.trim();
@@ -175,6 +319,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 ${renderMetadata(data.response.metadata)}
             `;
+
+            // Show bulk actions after successful syllabus generation
+            const bulkActionsDiv = document.getElementById('bulk-actions');
+            bulkActionsDiv.style.display = 'block';
+            
+            // Add event listener for bulk generation
+            document.getElementById('generateAllContent').addEventListener('click', () => {
+                generateAllWeeklyContent(data.response.raw_json.weeklyTopics, data.response.raw_json);
+            });
             
         } catch (error) {
             console.error('Error:', error);
@@ -188,5 +341,33 @@ document.addEventListener('DOMContentLoaded', () => {
             generateBtn.disabled = false;
             generateBtn.innerHTML = 'Generate Syllabus';
         }
+    });
+
+    // Add event listener for loading content
+    document.querySelectorAll('.load-content-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const weekNum = e.target.dataset.week;
+            const weekData = response.raw_json.weeklyTopics.find(w => w.week == weekNum);
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                
+                const contentResponse = await fetch('/generate/week-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ weekData })
+                });
+                
+                const data = await contentResponse.json();
+                if (data.error) throw new Error(data.error);
+                
+                const contentHtml = renderWeeklyContent(data.content);
+                btn.parentElement.innerHTML = contentHtml;
+            } catch (error) {
+                console.error('Error:', error);
+                btn.innerHTML = 'Error loading content';
+            }
+        });
     });
 });
