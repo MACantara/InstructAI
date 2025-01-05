@@ -28,6 +28,11 @@ class Config:
     DEBUG_TB_TEMPLATE_EDITOR_ENABLED = True
     FLASK_DEBUG = True
 
+    # Logging configuration
+    LOG_TO_STDOUT = os.getenv('LOG_TO_STDOUT', 'false').lower() == 'true'
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
+    LOG_FORMAT = '%(asctime)s %(levelname)s: [%(name)s] %(message)s [in %(pathname)s:%(lineno)d]'
+
     @classmethod
     def init_app(cls, app):
         """
@@ -54,6 +59,11 @@ class Config:
             value = getattr(cls, config, None)
             if value is not None:
                 app.config[config] = value
+
+        # Add logging configs
+        app.config['LOG_TO_STDOUT'] = cls.LOG_TO_STDOUT
+        app.config['LOG_LEVEL'] = cls.LOG_LEVEL
+        app.config['LOG_FORMAT'] = cls.LOG_FORMAT
 
         return app
 
