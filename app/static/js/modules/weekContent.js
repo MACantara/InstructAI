@@ -33,57 +33,26 @@ export const renderWeeklyContent = (weekContent) => {
                 ` : ''}
             </div>
 
+            ${renderWeeklyActivities(weekContent.content.activities)}
+
             <div class="resources-section">
                 <h4>Additional Resources</h4>
-                
-                ${weekContent.content.resources.videos.length > 0 ? `
-                    <div class="videos">
-                        <h5>📺 Videos</h5>
-                        <ul>
-                            ${sortResources(weekContent.content.resources, 'videos').map(video => `
-                                <li class="${video.url?.includes('vertexaisearch') ? 'meta-source' : ''}">
-                                    <a href="${video.url}" target="_blank" rel="noopener">
-                                        ${video.title}
-                                    </a>
-                                    <p>${video.description}</p>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-
-                ${weekContent.content.resources.articles.length > 0 ? `
-                    <div class="articles">
-                        <h5>📚 Articles</h5>
-                        <ul>
-                            ${sortResources(weekContent.content.resources, 'articles').map(article => `
-                                <li class="${article.url?.includes('vertexaisearch') ? 'meta-source' : ''}">
-                                    <a href="${article.url}" target="_blank" rel="noopener">
-                                        ${article.title}
-                                    </a>
-                                    <p>${article.relevance}</p>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-
-                ${weekContent.content.resources.tools.length > 0 ? `
-                    <div class="tools">
-                        <h5>🛠️ Tools</h5>
-                        <ul>
-                            ${weekContent.content.resources.tools.map(tool => `
-                                <li>
-                                    <a href="${tool.url}" target="_blank" rel="noopener">
-                                        ${tool.name}
-                                    </a>
-                                    <p>${tool.purpose}</p>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
+                ${renderResources(weekContent.content.resources)}
             </div>
+
+            ${weekContent.content.quiz ? `
+                <div class="quiz-info-section">
+                    <h4>Quiz Information</h4>
+                    <div class="quiz-meta">
+                        <ul>
+                            <li><strong>Duration:</strong> ${weekContent.content.quiz.duration}</li>
+                            <li><strong>Format:</strong> ${weekContent.content.quiz.format}</li>
+                            <li><strong>Questions:</strong> ${weekContent.content.quiz.numQuestions}</li>
+                            <li><strong>Total Points:</strong> ${weekContent.content.quiz.totalPoints}</li>
+                        </ul>
+                    </div>
+                </div>
+            ` : ''}
 
             <div class="exercises-section">
                 <h4>Exercises</h4>
@@ -99,6 +68,32 @@ export const renderWeeklyContent = (weekContent) => {
                     </div>
                 `).join('')}
             </div>
+        </div>
+    `;
+};
+
+const renderResources = (resources) => {
+    return `
+        ${resources.videos.length > 0 ? renderResourceSection('📺 Videos', resources.videos, 'video') : ''}
+        ${resources.articles.length > 0 ? renderResourceSection('📚 Articles', resources.articles, 'article') : ''}
+        ${resources.tools.length > 0 ? renderResourceSection('🛠️ Tools', resources.tools, 'tool') : ''}
+    `;
+};
+
+const renderResourceSection = (title, items, type) => {
+    return `
+        <div class="${type}s">
+            <h5>${title}</h5>
+            <ul>
+                ${items.map(item => `
+                    <li class="${item.url?.includes('vertexaisearch') ? 'meta-source' : ''}">
+                        <a href="${item.url}" target="_blank" rel="noopener">
+                            ${item.title || item.name}
+                        </a>
+                        <p>${item.description || item.purpose || item.relevance}</p>
+                    </li>
+                `).join('')}
+            </ul>
         </div>
     `;
 };

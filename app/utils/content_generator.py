@@ -84,6 +84,8 @@ def generate_weekly_content(topic, week_data):
                         }}
                     ]
                 }},
+                "activities": {json.dumps(week_data.get('activities', []))},
+                "quiz": {json.dumps(week_data.get('quiz', {}))},
                 "exercises": [
                     {{
                         "title": "Exercise title",
@@ -95,8 +97,13 @@ def generate_weekly_content(topic, week_data):
             }}
         }}
 
-        Use the following subtopics as guidance:
+        Use the following topics as guidance:
         {', '.join([t.get('subtitle', '') for t in week_data.get('topics', [])])}
+
+        Quiz Information:
+        Duration: {week_data.get('quiz', {}).get('duration', 'N/A')}
+        Format: {week_data.get('quiz', {}).get('format', 'N/A')}
+        Questions: {week_data.get('quiz', {}).get('numQuestions', 'N/A')}
         """
 
         client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
