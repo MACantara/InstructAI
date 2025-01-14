@@ -45,61 +45,92 @@ def extract_search_metadata(response_candidate):
 
 def generate_syllabus_prompt(topic, include_objectives=True, include_readings=True):
     """Generate a structured prompt for syllabus creation"""
-    prompt = f"""Create a valid JSON syllabus for '{topic}' strictly following this format (no additional text before or after the JSON):
+    prompt = f"""You are an experienced curriculum designer with expertise in creating comprehensive syllabi. 
+Your task is to create a detailed, well-structured syllabus for '{topic}'.
+
+Step 1: Analyze the topic and determine the appropriate scope and depth
+Step 2: Structure the course content logically over 12 weeks
+Step 3: Define clear learning objectives
+Step 4: Select relevant readings and materials
+Step 5: Format the output as valid JSON
+
+Think carefully about each step before providing your response.
+
+Output requirements:
+- Provide ONLY valid JSON, no explanatory text
+- Use specific, actionable language
+- Keep descriptions concise but informative
+- Ensure progression of topics builds on previous knowledge
+
+Example structure for one week's content:
+{{
+    "week": 1,
+    "mainTopic": "Introduction to Machine Learning",
+    "description": "Foundational concepts and practical applications",
+    "topics": [
+        {{
+            "subtitle": "What is Machine Learning?",
+            "points": [
+                "Definition and core principles",
+                "Types of machine learning approaches"
+            ]
+        }}
+    ]
+}}
+
+Generate a complete syllabus JSON using this schema:
 
 {{
     "title": "{topic} Syllabus",
-    "courseDescription": "string",
+    "courseDescription": "string (max 200 words)",
     "courseStructure": {{
         "duration": "12 weeks",
-        "format": "string",
-        "assessment": "string"
+        "format": "string (specify delivery method)",
+        "assessment": "string (evaluation methods)"
     }},
     "weeklyTopics": [
-        {{
-            "week": 1,
-            "mainTopic": "Topic title",
-            "description": "Overview description",
-            "topics": [
-                {{
-                    "subtitle": "Subtopic title",
-                    "points": ["Important concepts", "Key points"]
-                }}
-            ]
-        }}
+        // Array of 12 week objects following example structure above
     ]"""
 
     if include_objectives:
         prompt += """,
-    "learningObjectives": ["string", "string"]"""
+    "learningObjectives": [
+        "string (start with measurable action verbs)",
+        "string (focus on demonstrable skills)"
+    ]"""
 
     if include_readings:
         prompt += """,
-    "readings": {
+    "readings": {{
         "required": [
-            {
-                "title": "string",
-                "author": "string",
-                "description": "string"
-            }
+            {{
+                "title": "string (full title)",
+                "author": "string (full name)",
+                "description": "string (2-3 sentences)"
+            }}
         ],
         "recommended": [
-            {
-                "title": "string",
-                "author": "string",
-                "description": "string"
-            }
+            {{
+                "title": "string (full title)",
+                "author": "string (full name)",
+                "description": "string (2-3 sentences)"
+            }}
         ]
-    }"""
+    }}"""
 
     prompt += """}
 
-Remember:
-1. Provide ONLY the JSON object, no other text
-2. Use valid JSON syntax with double quotes
-3. Replace 'string' with actual content
-4. Include all fields shown in the structure
-5. Format markdown content within strings"""
+Quality criteria:
+1. Topics should progress logically from foundational to advanced concepts
+2. Each week's content should be realistic to cover in the time allocated
+3. Learning objectives must be specific and measurable
+4. Reading selections should directly support the weekly topics
+
+Before finalizing your response:
+1. Verify all JSON syntax is valid
+2. Check that all required fields are present
+3. Ensure consistency between topics and objectives
+4. Confirm readings align with course progression"""
 
     return prompt
 
