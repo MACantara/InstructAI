@@ -1,18 +1,24 @@
 import { configureMarkdown } from './renderer.js';
 
 export const renderSyllabus = (response) => {
-    if (!response.raw_json) return marked.parse(response.text);
+    if (!response.raw_json) {
+        return typeof response.text === 'string' ? 
+            marked.parse(response.text) : 
+            'Invalid response format';
+    }
     
     const json = response.raw_json;
     return `
         <div class="syllabus-header">
-            <h1>${json.title}</h1>
+            <h1>${json.title || 'Untitled Syllabus'}</h1>
         </div>
         
         <div class="course-info">
             <div class="course-description">
                 <h2>Course Description</h2>
-                ${marked.parse(json.courseDescription)}
+                ${typeof json.courseDescription === 'string' ? 
+                    marked.parse(json.courseDescription) : 
+                    'No description available'}
             </div>
             
             <div class="course-structure">
@@ -97,7 +103,7 @@ const renderOptionalSections = (json) => {
     return html;
 };
 
-const renderWeeklyActivities = (activities) => {
+export const renderWeeklyActivities = (activities) => {
     if (!activities || activities.length === 0) return '';
     
     return `
@@ -130,7 +136,7 @@ const renderWeeklyAssignments = (assignments) => {
     `;
 };
 
-const renderWeeklyQuiz = (quiz) => {
+export const renderWeeklyQuiz = (quiz) => {
     if (!quiz) return '';
     
     return `

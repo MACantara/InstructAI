@@ -29,6 +29,18 @@ export const renderMetadata = (metadata) => {
 };
 
 export const configureMarkdown = () => {
+    const renderer = new marked.Renderer();
+    
+    // Add safe heading rendering
+    renderer.heading = (text, level) => {
+        if (typeof text !== 'string') {
+            console.warn('Invalid heading text:', text);
+            text = String(text || '');
+        }
+        const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+        return `<h${level} id="${escapedText}">${text}</h${level}>`;
+    };
+
     marked.setOptions({
         breaks: true,
         headerIds: true,
@@ -36,21 +48,6 @@ export const configureMarkdown = () => {
         smartLists: true,
         smartypants: true,
         headerPrefix: 'section-',
-        renderer: new marked.Renderer(),
+        renderer: renderer
     });
-    
-    // Custom rendering for activity and assignment sections
-    const renderer = {
-        heading(text, level) {
-            const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
-            return `
-                <h${level} id="${escapedText}">
-                    ${text}
-                </h${level}>`;
-        },
-        // Preserve other default renderer methods
-        // ...existing code...
-    };
-    
-    marked.use({ renderer });
 };
