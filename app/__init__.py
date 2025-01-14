@@ -1,11 +1,8 @@
 from flask import Flask, render_template
-from flask_debugtoolbar import DebugToolbarExtension
 import logging
 from logging.handlers import RotatingFileHandler
 import os
 from config import config
-
-toolbar = DebugToolbarExtension()
 
 def configure_logging(app):
     """Configure logging for the application"""
@@ -78,9 +75,6 @@ def configure_logging(app):
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
-    
-    # Initialize extensions
-    toolbar.init_app(app)
     
     # Configure logging
     configure_logging(app)
