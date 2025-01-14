@@ -66,13 +66,30 @@ Example structure for one week's content:
 {{
     "week": 1,
     "mainTopic": "Introduction to Machine Learning",
-    "description": "Foundational concepts and practical applications",
+    "description": "Foundational concepts and practical applications of machine learning, covering core principles, data handling, and basic algorithms",
     "topics": [
         {{
-            "subtitle": "What is Machine Learning?",
+            "subtitle": "Fundamentals of Machine Learning",
             "points": [
-                "Definition and core principles",
-                "Types of machine learning approaches"
+                "Definition and historical development of machine learning",
+                "Types of learning: supervised, unsupervised, and reinforcement",
+                "Core terminology and basic mathematical concepts"
+            ]
+        }},
+        {{
+            "subtitle": "Data Preparation and Processing",
+            "points": [
+                "Data collection and cleaning methodologies",
+                "Feature selection and engineering techniques",
+                "Data normalization and standardization approaches"
+            ]
+        }},
+        {{
+            "subtitle": "Introduction to Learning Algorithms",
+            "points": [
+                "Basic linear regression and its applications",
+                "Understanding cost functions and optimization",
+                "Model evaluation metrics and validation techniques"
             ]
         }}
     ]
