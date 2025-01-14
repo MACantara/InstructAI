@@ -34,6 +34,23 @@ export const configureMarkdown = () => {
         headerIds: true,
         gfm: true,
         smartLists: true,
-        smartypants: true
+        smartypants: true,
+        headerPrefix: 'section-',
+        renderer: new marked.Renderer(),
     });
+    
+    // Custom rendering for activity and assignment sections
+    const renderer = {
+        heading(text, level) {
+            const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+            return `
+                <h${level} id="${escapedText}">
+                    ${text}
+                </h${level}>`;
+        },
+        // Preserve other default renderer methods
+        // ...existing code...
+    };
+    
+    marked.use({ renderer });
 };

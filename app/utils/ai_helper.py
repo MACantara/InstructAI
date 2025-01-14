@@ -92,6 +92,22 @@ Example structure for one week's content:
                 "Model evaluation metrics and validation techniques"
             ]
         }}
+    ],
+    "activities": [
+        {{
+            "type": "in-class exercise",
+            "title": "string",
+            "description": "string",
+            "duration": "string (e.g. '30 minutes')"
+        }}
+    ],
+    "assignments": [
+        {{
+            "title": "string",
+            "description": "string",
+            "dueDate": "string (e.g. 'End of Week 1')",
+            "weightage": "string (e.g. '10%')"
+        }}
     ]
 }}
 
@@ -155,7 +171,7 @@ def validate_json_structure(json_data):
     """Validate the JSON structure matches our expected schema"""
     required_fields = ['title', 'courseDescription', 'courseStructure', 'weeklyTopics']
     course_structure_fields = ['duration', 'format', 'assessment']
-    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics']
+    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments']
 
     # Check required top-level fields
     if not all(field in json_data for field in required_fields):
@@ -182,6 +198,9 @@ def validate_json_structure(json_data):
             if not isinstance(topic['points'], list):
                 return False
 
+        if not isinstance(week['activities'], list) or not isinstance(week['assignments'], list):
+            return False
+
     return True
 
 def format_json_to_markdown(json_data):
@@ -205,6 +224,20 @@ def format_json_to_markdown(json_data):
             markdown += f"#### {topic['subtitle']}\n"
             for point in topic['points']:
                 markdown += f"- {point}\n"
+            markdown += "\n"
+            
+        if week['activities']:
+            markdown += "#### In-Class Activities\n"
+            for activity in week['activities']:
+                markdown += f"- **{activity['title']}** ({activity['duration']})\n"
+                markdown += f"  {activity['description']}\n"
+            markdown += "\n"
+            
+        if week['assignments']:
+            markdown += "#### Assignments\n"
+            for assignment in week['assignments']:
+                markdown += f"- **{assignment['title']}** (Due: {assignment['dueDate']}, Weight: {assignment['weightage']})\n"
+                markdown += f"  {assignment['description']}\n"
             markdown += "\n"
     
     if 'learningObjectives' in json_data:

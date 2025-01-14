@@ -42,6 +42,10 @@ export const renderSyllabus = (response) => {
                                 </div>
                             `).join('')}
                         </div>
+                        
+                        ${renderWeeklyActivities(week.activities)}
+                        ${renderWeeklyAssignments(week.assignments)}
+                        
                         <button class="load-content-btn" data-week="${week.week}">Load Detailed Content</button>
                     </div>
                 </div>
@@ -90,4 +94,37 @@ const renderOptionalSections = (json) => {
     }
     
     return html;
+};
+
+const renderWeeklyActivities = (activities) => {
+    if (!activities || activities.length === 0) return '';
+    
+    return `
+        <div class="activities-section">
+            <h4>In-Class Activities</h4>
+            ${activities.map(activity => `
+                <div class="activity-item">
+                    <strong>${activity.title}</strong> (${activity.duration})
+                    <p>${activity.description}</p>
+                </div>
+            `).join('')}
+        </div>
+    `;
+};
+
+const renderWeeklyAssignments = (assignments) => {
+    if (!assignments || assignments.length === 0) return '';
+    
+    return `
+        <div class="assignments-section">
+            <h4>Assignments</h4>
+            ${assignments.map(assignment => `
+                <div class="assignment-item">
+                    <strong>${assignment.title}</strong>
+                    <div class="assignment-meta">Due: ${assignment.dueDate} | Weight: ${assignment.weightage}</div>
+                    <p>${assignment.description}</p>
+                </div>
+            `).join('')}
+        </div>
+    `;
 };
