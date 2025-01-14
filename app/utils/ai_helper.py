@@ -108,7 +108,14 @@ Example structure for one week's content:
             "dueDate": "string (e.g. 'End of Week 1')",
             "weightage": "string (e.g. '10%')"
         }}
-    ]
+    ],
+    "quiz": {{
+        "title": "string",
+        "duration": "string (e.g. '30 minutes')",
+        "totalPoints": "number",
+        "numQuestions": "number",
+        "format": "string (e.g. 'multiple-choice, short answer')"
+    }}
 }}
 
 Generate a complete syllabus JSON using this schema:
@@ -171,7 +178,7 @@ def validate_json_structure(json_data):
     """Validate the JSON structure matches our expected schema"""
     required_fields = ['title', 'courseDescription', 'courseStructure', 'weeklyTopics']
     course_structure_fields = ['duration', 'format', 'assessment']
-    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments']
+    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments', 'quiz']
 
     # Check required top-level fields
     if not all(field in json_data for field in required_fields):
@@ -200,6 +207,11 @@ def validate_json_structure(json_data):
 
         if not isinstance(week['activities'], list) or not isinstance(week['assignments'], list):
             return False
+
+        if 'quiz' in week:
+            quiz_fields = ['title', 'duration', 'totalPoints', 'numQuestions', 'format']
+            if not all(field in week['quiz'] for field in quiz_fields):
+                return False
 
     return True
 
@@ -239,6 +251,14 @@ def format_json_to_markdown(json_data):
                 markdown += f"- **{assignment['title']}** (Due: {assignment['dueDate']}, Weight: {assignment['weightage']})\n"
                 markdown += f"  {assignment['description']}\n"
             markdown += "\n"
+        
+        if 'quiz' in week and week['quiz']:
+            markdown += "#### Quiz\n"
+            markdown += f"**{week['quiz']['title']}**\n"
+            markdown += f"- Duration: {week['quiz']['duration']}\n"
+            markdown += f"- Format: {week['quiz']['format']}\n"
+            markdown += f"- Questions: {week['quiz']['numQuestions']}\n"
+            markdown += f"- Total Points: {week['quiz']['totalPoints']}\n\n"
     
     if 'learningObjectives' in json_data:
         markdown += "## Learning Objectives\n"

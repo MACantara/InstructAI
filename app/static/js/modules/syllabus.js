@@ -45,6 +45,7 @@ export const renderSyllabus = (response) => {
                         
                         ${renderWeeklyActivities(week.activities)}
                         ${renderWeeklyAssignments(week.assignments)}
+                        ${renderWeeklyQuiz(week.quiz)}
                         
                         <button class="load-content-btn" data-week="${week.week}">Load Detailed Content</button>
                     </div>
@@ -125,6 +126,27 @@ const renderWeeklyAssignments = (assignments) => {
                     <p>${assignment.description}</p>
                 </div>
             `).join('')}
+        </div>
+    `;
+};
+
+const renderWeeklyQuiz = (quiz) => {
+    if (!quiz) return '';
+    
+    return `
+        <div class="quiz-section">
+            <h4>Quiz</h4>
+            <div class="quiz-header">
+                <strong>${quiz.title}</strong>
+            </div>
+            <div class="quiz-meta">
+                <ul>
+                    <li><strong>Duration:</strong> ${quiz.duration}</li>
+                    <li><strong>Format:</strong> ${quiz.format}</li>
+                    <li><strong>Questions:</strong> ${quiz.numQuestions}</li>
+                    <li><strong>Total Points:</strong> ${quiz.totalPoints}</li>
+                </ul>
+            </div>
         </div>
     `;
 };
