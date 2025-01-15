@@ -40,6 +40,32 @@ def extract_content_metadata(response_candidate, week_number):
     
     return metadata
 
+def clean_json_string(json_str):
+    """Clean and validate JSON string"""
+    try:
+        # Remove any leading/trailing whitespace
+        json_str = json_str.strip()
+        
+        # Find the first { and last }
+        start_idx = json_str.find('{')
+        end_idx = json_str.rfind('}')
+        
+        if start_idx == -1 or end_idx == -1:
+            logger.error("No valid JSON object found in response")
+            return None
+            
+        # Extract just the JSON object
+        json_str = json_str[start_idx:end_idx + 1]
+        
+        # Verify it's valid JSON by parsing it
+        json.loads(json_str)
+        
+        return json_str
+    except Exception as e:
+        logger.error(f"JSON cleaning failed: {str(e)}")
+        logger.debug(f"Original string: {json_str}")
+        return None
+
 def generate_weekly_content(topic, week_data):
     """Generate detailed content for a specific weekly topic"""
     logger.debug(f"Received week data: {week_data}")
@@ -54,30 +80,47 @@ university-level course materials. Your expertise includes creating structured, 
 that builds knowledge systematically.
 
 TASK:
-Generate comprehensive course content for Week {week_data.get('week', '?')} focused on: {week_data.get('mainTopic', 'Unknown')}
+Generate comprehensive course content for Week {week_data['week']}: {week_data['mainTopic']}
 
 CONTEXT:
-This is part of a {topic} course. The week covers the following subtopics:
-{', '.join([t.get('subtitle', '') for t in week_data.get('topics', [])])}
+This is part of a {topic} course focusing on {week_data['description']}
 
-CONTENT STRUCTURE:
-Your lecture notes must follow this exact hierarchical format:
-1. Main Topic Title
-   1.1. Major Point One
-        - Comprehensive explanation
-        - Key concepts
-        - Related theories
-   1.2. Major Point Two
-        1.2.1. Subpoint A
-               - Detailed breakdown
-               - Examples
-               - Applications
-        1.2.2. Subpoint B
-               - Specific details
-               - Implementation
-   1.3. Major Point Three
-        - Supporting evidence
-        - Practical applications
+REQUIRED TOPIC STRUCTURE:
+You must strictly follow this exact topic structure:
+
+1. {week_data['topics'][0]['subtitle']}
+   1.1. {week_data['topics'][0]['points'][0]}
+        - Detailed explanation
+        - Implementation examples
+        - Best practices
+   1.2. {week_data['topics'][0]['points'][1]}
+        - Comprehensive coverage
+        - Real-world applications
+   1.3. {week_data['topics'][0]['points'][2]}
+        - Thorough breakdown
+        - Practical considerations
+
+2. {week_data['topics'][1]['subtitle']}
+   2.1. {week_data['topics'][1]['points'][0]}
+        - Core concepts
+        - Implementation strategies
+   2.2. {week_data['topics'][1]['points'][1]}
+        - Detailed mechanics
+        - System design
+   2.3. {week_data['topics'][1]['points'][2]}
+        - Key principles
+        - Design patterns
+
+3. {week_data['topics'][2]['subtitle']}
+   3.1. {week_data['topics'][2]['points'][0]}
+        - Fundamental approaches
+        - Implementation techniques
+   3.2. {week_data['topics'][2]['points'][1]}
+        - Design considerations
+        - Best practices
+   3.3. {week_data['topics'][2]['points'][2]}
+        - System integration
+        - Advanced concepts
 
 FORMATTING REQUIREMENTS:
 1. Use markdown for all content
@@ -88,56 +131,67 @@ FORMATTING REQUIREMENTS:
 6. Use > for important quotes or definitions
 7. Use --- for section breaks
 
+REQUIRED ACTIVITIES:
+Title: {week_data['activities'][0]['title']}
+Duration: {week_data['activities'][0]['duration']}
+Description: {week_data['activities'][0]['description']}
+
+REQUIRED ASSIGNMENT:
+Title: {week_data['assignments'][0]['title']}
+Due: {week_data['assignments'][0]['dueDate']}
+Weight: {week_data['assignments'][0]['weightage']}
+Description: {week_data['assignments'][0]['description']}
+
 OUTPUT FORMAT:
-Use this exact JSON structure:
+Use this exact JSON structure, ensuring all content aligns with the provided topics:
 {{
-    "week": {week_data.get('week', '?')},
-    "topic": "{week_data.get('mainTopic', 'Unknown')}",
+    "week": {week_data['week']},
+    "topic": "{week_data['mainTopic']}",
     "content": {{
         "lecture": {{
-            "notes": "# [Main Topic]\\n\\n1. First Major Point\\n1.1. Subpoint\\n- Detailed explanation...\\n\\n1.2. Subpoint\\n1.2.1. Further detail...\\n",
+            "notes": "# {week_data['mainTopic']}\\n\\n[Structured content following the exact topic outline above]",
             "slides": [
-                "Hierarchical bullet points matching lecture structure",
-                "One slide per major section (1.1, 1.2, etc.)"
+                "One slide per major section, following the given structure",
+                "Must cover all specified points in order"
             ],
             "examples": [
-                "Practical example following each major point",
-                "Implementation details with steps"
+                "Examples must directly relate to the specified topics",
+                "Practical implementations of given concepts"
             ]
         }},
         "resources": {{
             "videos": [
                 {{
-                    "title": "Title matching specific subtopic",
+                    "title": "Title specifically related to one of the given topics",
                     "url": "URL",
-                    "description": "Which section (1.1, 1.2, etc.) this supports"
+                    "description": "How it relates to specific point"
                 }}
             ],
             "articles": [
                 {{
-                    "title": "Title aligned with specific points",
+                    "title": "Title aligned with specific given topics",
                     "url": "URL",
-                    "relevance": "Which concepts (1.1, 1.2, etc.) this explains"
+                    "relevance": "Connection to specific point"
                 }}
             ],
             "tools": [
                 {{
                     "name": "Tool name",
                     "url": "URL",
-                    "purpose": "Which section this supports"
+                    "purpose": "Use in implementing specific concept"
                 }}
             ]
         }},
-        "activities": {json.dumps(week_data.get('activities', []))},
-        "quiz": {json.dumps(week_data.get('quiz', {}))},
+        "activities": {json.dumps(week_data['activities'])},
+        "quiz": {json.dumps(week_data['quiz'])},
         "exercises": [
             {{
-                "title": "Exercise aligned with section X.X",
-                "description": "Practice for specific numbered points",
+                "title": "Exercise for specific topic section",
+                "description": "Practice implementing covered concept",
                 "difficulty": "beginner|intermediate|advanced",
                 "instructions": [
-                    "Step 1 referencing specific concepts",
-                    "Step 2 building on previous steps"
+                    "Step-by-step implementation",
+                    "Based on covered material"
                 ]
             }}
         ]
@@ -145,26 +199,20 @@ Use this exact JSON structure:
 }}
 
 QUALITY CHECKLIST:
-✓ Each major point (1.1, 1.2, etc.) has comprehensive coverage
-✓ Subpoints provide detailed breakdowns
-✓ Examples directly relate to numbered sections
-✓ Resources support specific numbered topics
-✓ Clear progression through numbered points
-
-Before submitting:
-1. Verify all section numbers are correct
-2. Ensure each major point has sufficient detail
-3. Confirm examples match their sections
-4. Check that activities and exercises reference specific numbered points
+✓ Content strictly follows provided topic structure
+✓ All points from original structure are covered
+✓ Examples relate to specified topics only
+✓ Resources support given points
+✓ Activities align with provided descriptions
 
 Quiz Integration:
-- Format: {week_data.get('quiz', {}).get('format', 'N/A')}
-- Duration: {week_data.get('quiz', {}).get('duration', 'N/A')}
-- Questions: {week_data.get('quiz', {}).get('numQuestions', 'N/A')}
+Format: {week_data['quiz']['format']}
+Duration: {week_data['quiz']['duration']}
+Questions: {week_data['quiz']['numQuestions']}
+Points: {week_data['quiz']['totalPoints']}
 
-Structure each section to build towards quiz concepts while maintaining clear numerical organization.
+Ensure all content directly supports these specific topics and builds toward the quiz requirements.
 """
-
         client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
         config = GenerateContentConfig(
             temperature=1,
@@ -183,17 +231,31 @@ Structure each section to build towards quiz concepts while maintaining clear nu
 
         if response and response.candidates:
             try:
-                json_str = response.candidates[0].content.parts[0].text.strip()
-                # Clean JSON string
-                if not json_str.startswith('{'):
-                    json_str = json_str[json_str.find('{'):]
-                if not json_str.endswith('}'):
-                    json_str = json_str[:json_str.rfind('}')+1]
+                raw_text = response.candidates[0].content.parts[0].text
+                if not raw_text:
+                    logger.error("Empty response from API")
+                    return None
+                
+                logger.debug(f"Raw response length: {len(raw_text)}")
+                json_str = clean_json_string(raw_text)
+                
+                if not json_str:
+                    logger.error("Failed to clean JSON response")
+                    return None
                     
                 content = json.loads(json_str)
                 
+                # Add validation check
+                if not isinstance(content, dict) or 'week' not in content:
+                    logger.error("Invalid content structure")
+                    return None
+                
                 # Extract metadata and integrate with content
                 metadata = extract_content_metadata(response.candidates[0], week_data.get('week'))
+                
+                if 'content' not in content or 'resources' not in content['content']:
+                    logger.error("Missing required content structure")
+                    return None
                 
                 # Update content with metadata sources
                 if 'videos' in metadata:
@@ -202,12 +264,15 @@ Structure each section to build towards quiz concepts while maintaining clear nu
                 if 'articles' in metadata:
                     content['content']['resources']['articles'].extend(metadata['articles'])
                 
-                logger.debug(f"Successfully generated content for week {week_data.get('week')} with {len(metadata.get('videos', []))} videos and {len(metadata.get('articles', []))} articles from metadata")
+                logger.debug(f"Successfully generated content for week {week_data.get('week')}")
                 return content
                 
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse JSON response: {e}")
-                logger.debug(f"Raw response: {json_str}")
+                logger.error(f"JSON parsing failed: {str(e)}")
+                logger.debug(f"Attempted to parse: {json_str if 'json_str' in locals() else 'No JSON string available'}")
+                return None
+            except Exception as e:
+                logger.error(f"Content processing failed: {str(e)}")
                 return None
         
         logger.warning("No response generated from API")
