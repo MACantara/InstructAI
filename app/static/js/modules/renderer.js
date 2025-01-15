@@ -31,7 +31,7 @@ export const renderMetadata = (metadata) => {
 export const configureMarkdown = () => {
     const renderer = new marked.Renderer();
     
-    // Add safe heading rendering
+    // Add safe heading rendering with topic validation
     renderer.heading = (text, level) => {
         try {
             // Handle object type headings
@@ -44,6 +44,13 @@ export const configureMarkdown = () => {
             // Clean the text
             const cleanText = text.replace(/[^\w\s-]/g, '');
             const escapedText = cleanText.toLowerCase().replace(/[^\w]+/g, '-');
+            
+            // Add section numbering for topic structure clarity
+            if (level === 3 && text.includes('Week')) {
+                return `<h${level} id="${escapedText}" class="week-heading">${text}</h${level}>`;
+            } else if (level === 4) {
+                return `<h${level} id="${escapedText}" class="topic-heading">${text}</h${level}>`;
+            }
             
             return `<h${level} id="${escapedText}">${text}</h${level}>`;
         } catch (e) {

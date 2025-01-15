@@ -8,6 +8,24 @@ export const renderSyllabus = (response) => {
     }
     
     const json = response.raw_json;
+
+    // Validate topic structure
+    const validateWeek = (week) => {
+        if (!Array.isArray(week.topics) || week.topics.length !== 3) {
+            console.error(`Week ${week.week}: Invalid number of topics`);
+            return false;
+        }
+        return week.topics.every(topic => 
+            Array.isArray(topic.points) && topic.points.length >= 3);
+    };
+
+    // Filter out invalid weeks
+    const validWeeks = json.weeklyTopics.filter(validateWeek);
+
+    if (validWeeks.length !== json.weeklyTopics.length) {
+        console.error('Some weeks have invalid topic structure');
+    }
+
     return `
         <div class="syllabus-header">
             <h1>${json.title || 'Untitled Syllabus'}</h1>
@@ -33,7 +51,7 @@ export const renderSyllabus = (response) => {
 
         <div class="weekly-topics">
             <h2>Weekly Topics</h2>
-            ${json.weeklyTopics.map(week => `
+            ${validWeeks.map(week => `
                 <div class="week-block">
                     <h3>Week ${week.week}: ${week.mainTopic}</h3>
                     <div class="week-content">
