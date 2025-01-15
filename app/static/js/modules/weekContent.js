@@ -1,6 +1,26 @@
 import { configureMarkdown } from './renderer.js';
 import { renderWeeklyActivities, renderWeeklyQuiz } from './syllabus.js';
 
+const safeMarkdownParse = (text) => {
+    if (!text) return '';
+    try {
+        // Handle object or string input
+        const processedText = typeof text === 'object' ? 
+            (text.text || JSON.stringify(text)) : 
+            String(text);
+            
+        // Clean up any markdown formatting issues
+        const cleanText = processedText
+            .replace(/^#+\s*/, '')  // Remove leading #'s
+            .trim();
+            
+        return marked.parse(cleanText);
+    } catch (e) {
+        console.warn('Markdown parsing failed:', e);
+        return String(text);
+    }
+};
+
 export const renderWeeklyContent = (weekContent) => {
     if (!weekContent) return '<div class="error-message">No content available</div>';
     
@@ -9,19 +29,6 @@ export const renderWeeklyContent = (weekContent) => {
         console.error('Invalid content structure:', weekContent);
         return '<div class="error-message">Invalid content structure</div>';
     }
-    
-    // Ensure content is properly stringified
-    const safeMarkdownParse = (text) => {
-        if (!text) return '';
-        try {
-            return typeof text === 'string' ? 
-                marked.parse(text) : 
-                marked.parse(JSON.stringify(text));
-        } catch (e) {
-            console.warn('Markdown parsing failed:', e);
-            return String(text);
-        }
-    };
     
     // Ensure arrays exist
     const ensureArray = (arr) => Array.isArray(arr) ? arr : [];

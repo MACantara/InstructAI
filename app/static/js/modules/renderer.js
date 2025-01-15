@@ -33,12 +33,23 @@ export const configureMarkdown = () => {
     
     // Add safe heading rendering
     renderer.heading = (text, level) => {
-        if (typeof text !== 'string') {
-            console.warn('Invalid heading text:', text);
-            text = String(text || '');
+        try {
+            // Handle object type headings
+            if (typeof text === 'object' && text.text) {
+                text = text.text;
+            } else if (typeof text !== 'string') {
+                text = String(text || '');
+            }
+            
+            // Clean the text
+            const cleanText = text.replace(/[^\w\s-]/g, '');
+            const escapedText = cleanText.toLowerCase().replace(/[^\w]+/g, '-');
+            
+            return `<h${level} id="${escapedText}">${text}</h${level}>`;
+        } catch (e) {
+            console.warn('Error rendering heading:', e);
+            return `<h${level}>Untitled Section</h${level}>`;
         }
-        const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
-        return `<h${level} id="${escapedText}">${text}</h${level}>`;
     };
 
     marked.setOptions({
