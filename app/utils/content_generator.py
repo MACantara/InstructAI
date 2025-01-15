@@ -108,7 +108,7 @@ def generate_weekly_content(topic, week_data):
 
         client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
         config = GenerateContentConfig(
-            temperature=0.7,
+            temperature=1,
             top_k=40,
             top_p=0.95,
             candidate_count=1,
