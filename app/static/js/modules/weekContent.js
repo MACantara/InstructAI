@@ -21,6 +21,39 @@ const safeMarkdownParse = (text) => {
     }
 };
 
+const formatSectionContent = (content) => {
+    const formattedText = content
+        .replace(/\*\*([^*]+)\*\*/g, '<span class="key-term">$1</span>')
+        .replace(/\*([^*]+)\*/g, '<em class="emphasis">$1</em>')
+        .replace(/^(\d+\.\d+\.?)\s+/gm, '<h3 class="subtopic-title">$1 ');
+
+    return formattedText;
+};
+
+const formatSlides = (slides) => {
+    return `
+        <div class="slides-section">
+            <h2 class="section-header">Key Points</h2>
+            ${slides.map(slide => `
+                <div class="slide-item">${slide}</div>
+            `).join('')}
+        </div>
+    `;
+};
+
+const formatExamples = (examples) => {
+    return `
+        <div class="examples-section">
+            <h2 class="section-header">Examples</h2>
+            ${examples.map(example => `
+                <div class="example-item">${example}</div>
+            `).join('')}
+        </div>
+    `;
+};
+
+const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
+
 export const renderWeeklyContent = (weekContent) => {
     if (!weekContent) return '<div class="error-message">No content available</div>';
     
@@ -31,8 +64,6 @@ export const renderWeeklyContent = (weekContent) => {
     }
     
     // Ensure arrays exist
-    const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
-    
     const lecture = weekContent.content.lecture;
     const resources = weekContent.content.resources || {};
     const exercises = ensureArray(weekContent.content.exercises);
@@ -40,53 +71,16 @@ export const renderWeeklyContent = (weekContent) => {
     return `
         <div class="week-content-details">
             <div class="lecture-content">
-                <h4>Lecture Materials</h4>
-                ${safeMarkdownParse(lecture.notes)}
-                
-                <div class="slides-section">
-                    <h5>Key Points</h5>
-                    <ul>
-                        ${ensureArray(lecture.slides).map(slide => `
-                            <li>${typeof slide === 'string' ? slide : JSON.stringify(slide)}</li>
-                        `).join('')}
-                    </ul>
-                </div>
-
-                ${ensureArray(lecture.examples).length > 0 ? `
-                    <div class="examples-section">
-                        <h5>Examples</h5>
-                        <pre><code>${ensureArray(lecture.examples).join('\n\n')}</code></pre>
-                    </div>
-                ` : ''}
+                <h2 class="section-header">Lecture Materials</h2>
+                ${formatSectionContent(lecture.notes)}
+                ${formatSlides(lecture.slides)}
+                ${formatExamples(lecture.examples)}
             </div>
 
             ${weekContent.content.activities ? renderWeeklyActivities(weekContent.content.activities) : ''}
-
-            ${resources ? `
-                <div class="resources-section">
-                    <h4>Additional Resources</h4>
-                    ${renderResources(resources)}
-                </div>
-            ` : ''}
-
+            ${renderResources(weekContent.content.resources || {})}
             ${weekContent.content.quiz ? renderWeeklyQuiz(weekContent.content.quiz) : ''}
-
-            ${exercises.length > 0 ? `
-                <div class="exercises-section">
-                    <h4>Exercises</h4>
-                    ${exercises.map(exercise => `
-                        <div class="exercise-item difficulty-${exercise.difficulty || 'unknown'}">
-                            <h5>${exercise.title || 'Untitled Exercise'}</h5>
-                            <p>${exercise.description || ''}</p>
-                            <ol>
-                                ${ensureArray(exercise.instructions).map(instruction => `
-                                    <li>${instruction}</li>
-                                `).join('')}
-                            </ol>
-                        </div>
-                    `).join('')}
-                </div>
-            ` : ''}
+            ${renderExercises(weekContent.content.exercises || [])}
         </div>
     `;
 };
@@ -113,6 +107,27 @@ const renderResourceSection = (title, items, type) => {
                     </li>
                 `).join('')}
             </ul>
+        </div>
+    `;
+};
+
+const renderExercises = (exercises) => {
+    if (!exercises || exercises.length === 0) return '';
+    
+    return `
+        <div class="exercises-section">
+            <h4>Exercises</h4>
+            ${exercises.map(exercise => `
+                <div class="exercise-item difficulty-${exercise.difficulty || 'unknown'}">
+                    <h5>${exercise.title || 'Untitled Exercise'}</h5>
+                    <p>${exercise.description || ''}</p>
+                    <ol>
+                        ${ensureArray(exercise.instructions).map(instruction => `
+                            <li>${instruction}</li>
+                        `).join('')}
+                    </ol>
+                </div>
+            `).join('')}
         </div>
     `;
 };

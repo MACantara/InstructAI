@@ -28,3 +28,132 @@
     background: var(--text-color-light);
     color: white;
 }
+
+.lecture-content {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-color-dark);
+}
+
+.section-header {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    margin: 2rem 0 1rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+}
+
+.topic-section {
+    margin: 2rem 0;
+}
+
+.topic-title {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    margin: 1.5rem 0 1rem;
+}
+
+.subtopic {
+    margin: 1.5rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid var(--accent-color);
+}
+
+.subtopic-title {
+    font-size: 1.3rem;
+    color: var(--text-color-dark);
+    margin-bottom: 1rem;
+}
+
+.content-paragraph {
+    margin: 1rem 0;
+    text-align: justify;
+}
+
+.key-term {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.example-block {
+    background: var(--background-light);
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 4px;
+    border-left: 4px solid var(--accent-color);
+}
+
+.slides-section {
+    margin: 2rem 0;
+}
+
+.slide-item {
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0;
+    background: var(--background-light);
+    border-radius: 4px;
+}
+
+.examples-section {
+    margin: 2rem 0;
+}
+
+.example-item {
+    padding: 1rem;
+    margin: 1rem 0;
+    background: var(--background-light);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.quote-block {
+    font-style: italic;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-left: 4px solid var(--accent-color);
+    background: var(--background-light);
+}
+
+.separator {
+    margin: 2rem 0;
+    border: none;
+    border-top: 2px solid var(--border-color);
+}
+
+.exercises-section {
+    margin: 2rem 0;
+}
+
+.exercise-item {
+    padding: 1rem;
+    margin: 1rem 0;
+    background: var(--background-light);
+    border-radius: 4px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.exercise-item h5 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.exercise-item.difficulty-beginner {
+    border-left-color: var(--success-color);
+}
+
+.exercise-item.difficulty-intermediate {
+    border-left-color: var(--warning-color);
+}
+
+.exercise-item.difficulty-advanced {
+    border-left-color: var(--danger-color);
+}
+
+.exercise-item ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.exercise-item li {
+    margin: 0.5rem 0;
+}
