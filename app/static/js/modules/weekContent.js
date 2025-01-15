@@ -21,13 +21,60 @@ const safeMarkdownParse = (text) => {
     }
 };
 
-const formatSectionContent = (content) => {
-    const formattedText = content
-        .replace(/\*\*([^*]+)\*\*/g, '<span class="key-term">$1</span>')
-        .replace(/\*([^*]+)\*/g, '<em class="emphasis">$1</em>')
-        .replace(/^(\d+\.\d+\.?)\s+/gm, '<h3 class="subtopic-title">$1 ');
+const formatParagraphs = (text) => {
+    return text
+        // Split into paragraphs on double newlines
+        .split(/\n\n+/)
+        .filter(p => p.trim())
+        .map(p => `<p class="content-paragraph">${p.trim()}</p>`)
+        .join('\n');
+};
 
-    return formattedText;
+const formatSectionContent = (content) => {
+    // First, split content into sections based on numbered headers
+    const sections = content.split(/(?=^\d+\.)/gm);
+    
+    return sections.map(section => {
+        // Process each section
+        const lines = section.split('\n');
+        let formattedSection = '';
+        
+        // Extract section title if it exists (numbered header)
+        if (lines[0].match(/^\d+\./)) {
+            formattedSection += `<h2 class="section-title">${lines.shift()}</h2>\n`;
+        }
+        
+        // Process remaining lines
+        const subsections = lines.join('\n').split(/(?=^\d+\.\d+\.)/gm);
+        
+        return subsections.map(subsection => {
+            const subLines = subsection.split('\n');
+            let formattedSubsection = '';
+            
+            // Extract subsection title if it exists
+            if (subLines[0].match(/^\d+\.\d+\./)) {
+                formattedSubsection += `<h3 class="subtopic-title">${subLines.shift()}</h3>\n`;
+            }
+            
+            // Group the remaining content
+            const paragraphs = subLines.join('\n')
+                .replace(/\*\*([^*]+)\*\*/g, '<span class="key-term">$1</span>')
+                .replace(/\*([^*]+)\*/g, '<em class="emphasis">$1</em>')
+                .replace(/^-\s+(.+)$/gm, '<li>$1</li>') // Convert bullet points
+                .replace(/(?:^|\n)>\s*([^\n]+)/g, '<blockquote class="quote-block">$1</blockquote>'); // Format quotes
+            
+            // Wrap bullet points in ul if they exist
+            const hasListItems = paragraphs.includes('<li>');
+            const formattedParagraphs = hasListItems ? 
+                paragraphs.replace(/(<li>.*<\/li>\n*)+/g, '<ul>$&</ul>') :
+                formatParagraphs(paragraphs);
+                
+            formattedSubsection += formattedParagraphs;
+            
+            return `<div class="subtopic">${formattedSubsection}</div>`;
+        }).join('\n');
+        
+    }).join('\n<hr class="separator">\n');
 };
 
 const formatSlides = (slides) => {
@@ -42,12 +89,21 @@ const formatSlides = (slides) => {
 };
 
 const formatExamples = (examples) => {
+    if (!examples || !examples.length) return '';
+    
     return `
         <div class="examples-section">
             <h2 class="section-header">Examples</h2>
-            ${examples.map(example => `
-                <div class="example-item">${example}</div>
-            `).join('')}
+            ${examples.map(example => {
+                // Split example into title and details if it contains a colon
+                const [title, ...details] = example.split(':');
+                return `
+                    <div class="example-item">
+                        <h4>${title}${details.length ? ':' : ''}</h4>
+                        ${details.length ? `<p>${details.join(':').trim()}</p>` : ''}
+                    </div>
+                `;
+            }).join('')}
         </div>
     `;
 };

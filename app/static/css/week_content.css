@@ -54,9 +54,21 @@
 }
 
 .subtopic {
-    margin: 1.5rem 0;
-    padding-left: 1rem;
-    border-left: 3px solid var(--accent-color);
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--background-light);
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-color);
+}
+
+.subtopic ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.subtopic li {
+    margin: 0.5rem 0;
+    line-height: 1.6;
 }
 
 .subtopic-title {
@@ -68,11 +80,14 @@
 .content-paragraph {
     margin: 1rem 0;
     text-align: justify;
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
 }
 
 .key-term {
-    font-weight: bold;
+    font-weight: 600;
     color: var(--primary-color);
+    padding: 0 0.2rem;
 }
 
 .example-block {
@@ -112,6 +127,11 @@
     margin: 1rem 0;
     border-left: 4px solid var(--accent-color);
     background: var(--background-light);
+    margin: 1.5rem 0;
+    padding: 1rem 1.5rem;
+    background: var(--background-lighter);
+    border-left: 4px solid var(--primary-color);
+    color: var(--text-color-dark);
 }
 
 .separator {
