@@ -48,6 +48,19 @@ def generate_syllabus_prompt(topic, include_objectives=True, include_readings=Tr
     prompt = f"""You are an experienced curriculum designer with expertise in creating comprehensive syllabi. 
 Your task is to create a detailed, well-structured syllabus for '{topic}'.
 
+STRICT REQUIREMENTS:
+- Each week MUST have EXACTLY THREE subtopics
+- Each subtopic MUST have AT LEAST THREE learning points
+- Topics must progress logically from foundational to advanced concepts
+- All content must be detailed and specific to the subject matter
+
+STRUCTURE VALIDATION:
+Your response will be rejected if:
+1. Any week has fewer or more than 3 subtopics
+2. Any subtopic has fewer than 3 points
+3. Topics are too general or vague
+4. Points lack specific, actionable content
+
 Step 1: Analyze the topic and determine the appropriate scope and depth
 Step 2: Structure the course content logically over 12 weeks
 Step 3: Define clear learning objectives
@@ -196,13 +209,17 @@ def validate_json_structure(json_data):
         if not all(field in week for field in weekly_topic_fields):
             return False
 
-        if not isinstance(week['topics'], list):
+        # Strictly validate topic structure
+        if not isinstance(week['topics'], list) or len(week['topics']) != 3:
+            logger.error(f"Week {week.get('week')} does not have exactly 3 topics")
             return False
 
         for topic in week['topics']:
             if not all(field in topic for field in ['subtitle', 'points']):
                 return False
-            if not isinstance(topic['points'], list):
+            # Strictly validate points
+            if not isinstance(topic['points'], list) or len(topic['points']) < 3:
+                logger.error(f"Topic '{topic.get('subtitle')}' does not have minimum 3 points")
                 return False
 
         if not isinstance(week['activities'], list) or not isinstance(week['assignments'], list):
