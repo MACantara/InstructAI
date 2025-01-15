@@ -2,72 +2,84 @@ import { configureMarkdown } from './renderer.js';
 import { renderWeeklyActivities, renderWeeklyQuiz } from './syllabus.js';
 
 export const renderWeeklyContent = (weekContent) => {
-    if (!weekContent) return '';
+    if (!weekContent) return '<div class="error-message">No content available</div>';
+    
+    // Validate content structure
+    if (!weekContent.content || !weekContent.content.lecture) {
+        console.error('Invalid content structure:', weekContent);
+        return '<div class="error-message">Invalid content structure</div>';
+    }
     
     // Ensure content is properly stringified
     const safeMarkdownParse = (text) => {
-        if (typeof text !== 'string') {
-            console.warn('Invalid markdown text:', text);
-            return '';
+        if (!text) return '';
+        try {
+            return typeof text === 'string' ? 
+                marked.parse(text) : 
+                marked.parse(JSON.stringify(text));
+        } catch (e) {
+            console.warn('Markdown parsing failed:', e);
+            return String(text);
         }
-        return marked.parse(text);
     };
     
-    // Sort videos and articles by source (AI-generated vs metadata)
-    const sortResources = (resources, type) => {
-        return resources[type].sort((a, b) => {
-            const aFromMeta = a.url?.includes('vertexaisearch.cloud.google.com') || false;
-            const bFromMeta = b.url?.includes('vertexaisearch.cloud.google.com') || false;
-            return aFromMeta === bFromMeta ? 0 : aFromMeta ? -1 : 1;
-        });
-    };
+    // Ensure arrays exist
+    const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
+    
+    const lecture = weekContent.content.lecture;
+    const resources = weekContent.content.resources || {};
+    const exercises = ensureArray(weekContent.content.exercises);
     
     return `
         <div class="week-content-details">
             <div class="lecture-content">
                 <h4>Lecture Materials</h4>
-                ${safeMarkdownParse(weekContent.content.lecture.notes)}
+                ${safeMarkdownParse(lecture.notes)}
                 
                 <div class="slides-section">
                     <h5>Key Points</h5>
                     <ul>
-                        ${weekContent.content.lecture.slides.map(slide => `
-                            <li>${slide}</li>
+                        ${ensureArray(lecture.slides).map(slide => `
+                            <li>${typeof slide === 'string' ? slide : JSON.stringify(slide)}</li>
                         `).join('')}
                     </ul>
                 </div>
 
-                ${weekContent.content.lecture.examples.length > 0 ? `
+                ${ensureArray(lecture.examples).length > 0 ? `
                     <div class="examples-section">
                         <h5>Examples</h5>
-                        <pre><code>${weekContent.content.lecture.examples.join('\n\n')}</code></pre>
+                        <pre><code>${ensureArray(lecture.examples).join('\n\n')}</code></pre>
                     </div>
                 ` : ''}
             </div>
 
             ${weekContent.content.activities ? renderWeeklyActivities(weekContent.content.activities) : ''}
 
-            <div class="resources-section">
-                <h4>Additional Resources</h4>
-                ${renderResources(weekContent.content.resources)}
-            </div>
+            ${resources ? `
+                <div class="resources-section">
+                    <h4>Additional Resources</h4>
+                    ${renderResources(resources)}
+                </div>
+            ` : ''}
 
             ${weekContent.content.quiz ? renderWeeklyQuiz(weekContent.content.quiz) : ''}
 
-            <div class="exercises-section">
-                <h4>Exercises</h4>
-                ${weekContent.content.exercises.map(exercise => `
-                    <div class="exercise-item difficulty-${exercise.difficulty}">
-                        <h5>${exercise.title}</h5>
-                        <p>${exercise.description}</p>
-                        <ol>
-                            ${exercise.instructions.map(instruction => `
-                                <li>${instruction}</li>
-                            `).join('')}
-                        </ol>
-                    </div>
-                `).join('')}
-            </div>
+            ${exercises.length > 0 ? `
+                <div class="exercises-section">
+                    <h4>Exercises</h4>
+                    ${exercises.map(exercise => `
+                        <div class="exercise-item difficulty-${exercise.difficulty || 'unknown'}">
+                            <h5>${exercise.title || 'Untitled Exercise'}</h5>
+                            <p>${exercise.description || ''}</p>
+                            <ol>
+                                ${ensureArray(exercise.instructions).map(instruction => `
+                                    <li>${instruction}</li>
+                                `).join('')}
+                            </ol>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
         </div>
     `;
 };
@@ -99,13 +111,18 @@ const renderResourceSection = (title, items, type) => {
 };
 
 export const openWeekContent = (weekNumber, topic, content) => {
-    const contentHtml = renderWeeklyContent(content);
-    const params = new URLSearchParams({
-        content: contentHtml,
-        topic: topic
-    });
-    window.open(`/week-content/${weekNumber}?${params}`, `week${weekNumber}`,
-        'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
+    try {
+        const contentHtml = renderWeeklyContent(content);
+        const params = new URLSearchParams({
+            content: contentHtml,
+            topic: topic || 'Weekly Content'
+        });
+        window.open(`/week-content/${weekNumber}?${params}`, `week${weekNumber}`,
+            'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
+    } catch (error) {
+        console.error('Error opening week content:', error);
+        alert('Failed to open week content. Please try again.');
+    }
 };
 
 export const generateAllWeeklyContent = async (weeks, updateUI) => {
