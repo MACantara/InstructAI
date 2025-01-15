@@ -43,6 +43,13 @@ def extract_content_metadata(response_candidate, week_number):
 def clean_json_string(json_str):
     """Clean and validate JSON string"""
     try:
+        # Debug logging
+        logger.debug("Raw string length: %d", len(json_str))
+        logger.debug("First 100 chars: %s", json_str[:100])
+        
+        # Remove any markdown backticks
+        json_str = json_str.replace('```json', '').replace('```', '')
+        
         # Remove any leading/trailing whitespace
         json_str = json_str.strip()
         
@@ -52,18 +59,23 @@ def clean_json_string(json_str):
         
         if start_idx == -1 or end_idx == -1:
             logger.error("No valid JSON object found in response")
+            logger.debug("Full response: %s", json_str)
             return None
             
         # Extract just the JSON object
         json_str = json_str[start_idx:end_idx + 1]
         
-        # Verify it's valid JSON by parsing it
-        json.loads(json_str)
-        
+        # Try to parse it to validate
+        parsed = json.loads(json_str)
+        if not isinstance(parsed, dict):
+            logger.error("Parsed JSON is not an object")
+            return None
+            
         return json_str
+        
     except Exception as e:
         logger.error(f"JSON cleaning failed: {str(e)}")
-        logger.debug(f"Original string: {json_str}")
+        logger.debug("Failed string: %s", json_str)
         return None
 
 def generate_weekly_content(topic, week_data):
@@ -75,50 +87,60 @@ def generate_weekly_content(topic, week_data):
         return None
         
     try:
+        # Helper function to safely get nested values
+        def safe_get_text(obj, *keys, default=""):
+            try:
+                value = obj
+                for key in keys:
+                    value = value[key]
+                return str(value) if value is not None else default
+            except (KeyError, TypeError, AttributeError):
+                return default
+
         prompt = f"""You are an expert educational content developer with years of experience creating 
 university-level course materials. Your expertise includes creating structured, hierarchical content
 that builds knowledge systematically.
 
 TASK:
-Generate comprehensive course content for Week {week_data['week']}: {week_data['mainTopic']}
+Generate comprehensive course content for Week {safe_get_text(week_data, 'week')}: {safe_get_text(week_data, 'mainTopic')}
 
 CONTEXT:
-This is part of a {topic} course focusing on {week_data['description']}
+This is part of a {topic} course focusing on {safe_get_text(week_data, 'description')}
 
 REQUIRED TOPIC STRUCTURE:
 You must strictly follow this exact topic structure:
 
-1. {week_data['topics'][0]['subtitle']}
-   1.1. {week_data['topics'][0]['points'][0]}
+1. {safe_get_text(week_data, 'topics', 0, 'subtitle')}
+   1.1. {safe_get_text(week_data, 'topics', 0, 'points', 0)}
         - Detailed explanation
         - Implementation examples
         - Best practices
-   1.2. {week_data['topics'][0]['points'][1]}
+   1.2. {safe_get_text(week_data, 'topics', 0, 'points', 1)}
         - Comprehensive coverage
         - Real-world applications
-   1.3. {week_data['topics'][0]['points'][2]}
+   1.3. {safe_get_text(week_data, 'topics', 0, 'points', 2)}
         - Thorough breakdown
         - Practical considerations
 
-2. {week_data['topics'][1]['subtitle']}
-   2.1. {week_data['topics'][1]['points'][0]}
+2. {safe_get_text(week_data, 'topics', 1, 'subtitle')}
+   2.1. {safe_get_text(week_data, 'topics', 1, 'points', 0)}
         - Core concepts
         - Implementation strategies
-   2.2. {week_data['topics'][1]['points'][1]}
+   2.2. {safe_get_text(week_data, 'topics', 1, 'points', 1)}
         - Detailed mechanics
         - System design
-   2.3. {week_data['topics'][1]['points'][2]}
+   2.3. {safe_get_text(week_data, 'topics', 1, 'points', 2)}
         - Key principles
         - Design patterns
 
-3. {week_data['topics'][2]['subtitle']}
-   3.1. {week_data['topics'][2]['points'][0]}
+3. {safe_get_text(week_data, 'topics', 2, 'subtitle')}
+   3.1. {safe_get_text(week_data, 'topics', 2, 'points', 0)}
         - Fundamental approaches
         - Implementation techniques
-   3.2. {week_data['topics'][2]['points'][1]}
+   3.2. {safe_get_text(week_data, 'topics', 2, 'points', 1)}
         - Design considerations
         - Best practices
-   3.3. {week_data['topics'][2]['points'][2]}
+   3.3. {safe_get_text(week_data, 'topics', 2, 'points', 2)}
         - System integration
         - Advanced concepts
 
@@ -215,12 +237,13 @@ Ensure all content directly supports these specific topics and builds toward the
 """
         client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
         config = GenerateContentConfig(
-            temperature=1,
+            temperature=0.7,  # Lower temperature for more structured output
             top_k=40,
             top_p=0.95,
             candidate_count=1,
             tools=[Tool(google_search=GoogleSearch())],
             max_output_tokens=8192,
+            stop_sequences=["}"],  # Help ensure complete JSON
         )
 
         response = client.models.generate_content(
@@ -236,11 +259,23 @@ Ensure all content directly supports these specific topics and builds toward the
                     logger.error("Empty response from API")
                     return None
                 
-                logger.debug(f"Raw response length: {len(raw_text)}")
-                json_str = clean_json_string(raw_text)
+                logger.debug("Response received, length: %d", len(raw_text))
+                
+                # Try multiple cleaning attempts
+                json_str = None
+                cleaning_attempts = [
+                    lambda x: clean_json_string(x),
+                    lambda x: clean_json_string(x.split('\n', 1)[-1]),  # Skip potential header
+                    lambda x: clean_json_string(x.partition('{')[2])  # Get everything after first {
+                ]
+                
+                for attempt in cleaning_attempts:
+                    json_str = attempt(raw_text)
+                    if json_str:
+                        break
                 
                 if not json_str:
-                    logger.error("Failed to clean JSON response")
+                    logger.error("All JSON cleaning attempts failed")
                     return None
                     
                 content = json.loads(json_str)
