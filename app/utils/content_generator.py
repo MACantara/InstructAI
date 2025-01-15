@@ -50,8 +50,8 @@ def generate_weekly_content(topic, week_data):
         
     try:
         prompt = f"""You are an expert educational content developer with years of experience creating 
-university-level course materials. Your expertise includes breaking down complex topics into 
-digestible modules and creating engaging learning experiences.
+university-level course materials. Your expertise includes creating structured, hierarchical content
+that builds knowledge systematically.
 
 TASK:
 Generate comprehensive course content for Week {week_data.get('week', '?')} focused on: {week_data.get('mainTopic', 'Unknown')}
@@ -60,55 +60,71 @@ CONTEXT:
 This is part of a {topic} course. The week covers the following subtopics:
 {', '.join([t.get('subtitle', '') for t in week_data.get('topics', [])])}
 
-APPROACH:
-1. First, analyze the topic and identify key learning concepts
-2. Then, create detailed lecture notes that build progressively
-3. Next, extract key points for slides
-4. Finally, develop practical examples and exercises
+CONTENT STRUCTURE:
+Your lecture notes must follow this exact hierarchical format:
+1. Main Topic Title
+   1.1. Major Point One
+        - Comprehensive explanation
+        - Key concepts
+        - Related theories
+   1.2. Major Point Two
+        1.2.1. Subpoint A
+               - Detailed breakdown
+               - Examples
+               - Applications
+        1.2.2. Subpoint B
+               - Specific details
+               - Implementation
+   1.3. Major Point Three
+        - Supporting evidence
+        - Practical applications
 
-CONTENT REQUIREMENTS:
-1. Lecture notes should be 500-750 words, using markdown formatting
-2. Slides should contain 5-7 key points
-3. Examples should be concrete and actionable
-4. Resources should be highly relevant and diverse
+FORMATTING REQUIREMENTS:
+1. Use markdown for all content
+2. Each point must have 2-3 paragraphs of explanation
+3. Include relevant examples after each major point
+4. Use consistent numbering (1., 1.1., 1.1.1., etc.)
+5. Bold key terms using **term**
+6. Use > for important quotes or definitions
+7. Use --- for section breaks
 
 OUTPUT FORMAT:
-Use this exact JSON structure, maintaining all fields:
+Use this exact JSON structure:
 {{
     "week": {week_data.get('week', '?')},
     "topic": "{week_data.get('mainTopic', 'Unknown')}",
     "content": {{
         "lecture": {{
-            "notes": "### [Main Topic]\\n\\nKey concepts and detailed explanations...\\n\\n### [Subtopic]\\n\\nDetailed breakdown...",
+            "notes": "# [Main Topic]\\n\\n1. First Major Point\\n1.1. Subpoint\\n- Detailed explanation...\\n\\n1.2. Subpoint\\n1.2.1. Further detail...\\n",
             "slides": [
-                "Concise, actionable point 1",
-                "Clear, memorable point 2"
+                "Hierarchical bullet points matching lecture structure",
+                "One slide per major section (1.1, 1.2, etc.)"
             ],
             "examples": [
-                "Specific, practical example with context",
-                "Code or step-by-step demonstration"
+                "Practical example following each major point",
+                "Implementation details with steps"
             ]
         }},
         "resources": {{
             "videos": [
                 {{
-                    "title": "Clear, descriptive title",
+                    "title": "Title matching specific subtopic",
                     "url": "URL",
-                    "description": "1-2 sentences on relevance"
+                    "description": "Which section (1.1, 1.2, etc.) this supports"
                 }}
             ],
             "articles": [
                 {{
-                    "title": "Informative title",
+                    "title": "Title aligned with specific points",
                     "url": "URL",
-                    "relevance": "Specific connection to topic"
+                    "relevance": "Which concepts (1.1, 1.2, etc.) this explains"
                 }}
             ],
             "tools": [
                 {{
                     "name": "Tool name",
                     "url": "URL",
-                    "purpose": "Specific use in this context"
+                    "purpose": "Which section this supports"
                 }}
             ]
         }},
@@ -116,12 +132,12 @@ Use this exact JSON structure, maintaining all fields:
         "quiz": {json.dumps(week_data.get('quiz', {}))},
         "exercises": [
             {{
-                "title": "Clear exercise title",
-                "description": "2-3 sentences describing purpose",
+                "title": "Exercise aligned with section X.X",
+                "description": "Practice for specific numbered points",
                 "difficulty": "beginner|intermediate|advanced",
                 "instructions": [
-                    "Step 1 with clear action",
-                    "Step 2 with expected outcome"
+                    "Step 1 referencing specific concepts",
+                    "Step 2 building on previous steps"
                 ]
             }}
         ]
@@ -129,20 +145,24 @@ Use this exact JSON structure, maintaining all fields:
 }}
 
 QUALITY CHECKLIST:
-✓ Content builds on previous knowledge
-✓ Examples are practical and relevant
-✓ Instructions are clear and actionable
-✓ Resources support learning objectives
-✓ Exercises match topic difficulty
+✓ Each major point (1.1, 1.2, etc.) has comprehensive coverage
+✓ Subpoints provide detailed breakdowns
+✓ Examples directly relate to numbered sections
+✓ Resources support specific numbered topics
+✓ Clear progression through numbered points
 
-IMPORTANT:
-- Ground your resource suggestions in real, authoritative sources
-- Ensure all content directly supports learning objectives
-- Balance theoretical knowledge with practical application
-- Consider the quiz format: {week_data.get('quiz', {}).get('format', 'N/A')}
-- Target content for a {week_data.get('quiz', {}).get('duration', 'N/A')} duration
+Before submitting:
+1. Verify all section numbers are correct
+2. Ensure each major point has sufficient detail
+3. Confirm examples match their sections
+4. Check that activities and exercises reference specific numbered points
 
-Review and refine your response before submitting to ensure all requirements are met.
+Quiz Integration:
+- Format: {week_data.get('quiz', {}).get('format', 'N/A')}
+- Duration: {week_data.get('quiz', {}).get('duration', 'N/A')}
+- Questions: {week_data.get('quiz', {}).get('numQuestions', 'N/A')}
+
+Structure each section to build towards quiz concepts while maintaining clear numerical organization.
 """
 
         client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
