@@ -49,62 +49,101 @@ def generate_weekly_content(topic, week_data):
         return None
         
     try:
-        prompt = f"""Generate comprehensive course content for Week {week_data.get('week', '?')}: {week_data.get('mainTopic', 'Unknown')}
-        following this JSON structure:
+        prompt = f"""You are an expert educational content developer with years of experience creating 
+university-level course materials. Your expertise includes breaking down complex topics into 
+digestible modules and creating engaging learning experiences.
 
-        {{
-            "week": {week_data.get('week', '?')},
-            "topic": "{week_data.get('mainTopic', 'Unknown')}",
-            "content": {{
-                "lecture": {{
-                    "notes": "Detailed lecture notes in markdown",
-                    "slides": ["Key points for slides"],
-                    "examples": ["Code or practical examples"]
-                }},
-                "resources": {{
-                    "videos": [
-                        {{
-                            "title": "Video title",
-                            "url": "Video URL",
-                            "description": "Brief description"
-                        }}
-                    ],
-                    "articles": [
-                        {{
-                            "title": "Article title",
-                            "url": "Article URL",
-                            "relevance": "Why this is important"
-                        }}
-                    ],
-                    "tools": [
-                        {{
-                            "name": "Tool name",
-                            "url": "Tool URL",
-                            "purpose": "How it's used in this topic"
-                        }}
-                    ]
-                }},
-                "activities": {json.dumps(week_data.get('activities', []))},
-                "quiz": {json.dumps(week_data.get('quiz', {}))},
-                "exercises": [
-                    {{
-                        "title": "Exercise title",
-                        "description": "Exercise description",
-                        "difficulty": "beginner|intermediate|advanced",
-                        "instructions": ["Step-by-step instructions"]
-                    }}
+TASK:
+Generate comprehensive course content for Week {week_data.get('week', '?')} focused on: {week_data.get('mainTopic', 'Unknown')}
+
+CONTEXT:
+This is part of a {topic} course. The week covers the following subtopics:
+{', '.join([t.get('subtitle', '') for t in week_data.get('topics', [])])}
+
+APPROACH:
+1. First, analyze the topic and identify key learning concepts
+2. Then, create detailed lecture notes that build progressively
+3. Next, extract key points for slides
+4. Finally, develop practical examples and exercises
+
+CONTENT REQUIREMENTS:
+1. Lecture notes should be 500-750 words, using markdown formatting
+2. Slides should contain 5-7 key points
+3. Examples should be concrete and actionable
+4. Resources should be highly relevant and diverse
+
+OUTPUT FORMAT:
+Use this exact JSON structure, maintaining all fields:
+{{
+    "week": {week_data.get('week', '?')},
+    "topic": "{week_data.get('mainTopic', 'Unknown')}",
+    "content": {{
+        "lecture": {{
+            "notes": "### [Main Topic]\\n\\nKey concepts and detailed explanations...\\n\\n### [Subtopic]\\n\\nDetailed breakdown...",
+            "slides": [
+                "Concise, actionable point 1",
+                "Clear, memorable point 2"
+            ],
+            "examples": [
+                "Specific, practical example with context",
+                "Code or step-by-step demonstration"
+            ]
+        }},
+        "resources": {{
+            "videos": [
+                {{
+                    "title": "Clear, descriptive title",
+                    "url": "URL",
+                    "description": "1-2 sentences on relevance"
+                }}
+            ],
+            "articles": [
+                {{
+                    "title": "Informative title",
+                    "url": "URL",
+                    "relevance": "Specific connection to topic"
+                }}
+            ],
+            "tools": [
+                {{
+                    "name": "Tool name",
+                    "url": "URL",
+                    "purpose": "Specific use in this context"
+                }}
+            ]
+        }},
+        "activities": {json.dumps(week_data.get('activities', []))},
+        "quiz": {json.dumps(week_data.get('quiz', {}))},
+        "exercises": [
+            {{
+                "title": "Clear exercise title",
+                "description": "2-3 sentences describing purpose",
+                "difficulty": "beginner|intermediate|advanced",
+                "instructions": [
+                    "Step 1 with clear action",
+                    "Step 2 with expected outcome"
                 ]
             }}
-        }}
+        ]
+    }}
+}}
 
-        Use the following topics as guidance:
-        {', '.join([t.get('subtitle', '') for t in week_data.get('topics', [])])}
+QUALITY CHECKLIST:
+✓ Content builds on previous knowledge
+✓ Examples are practical and relevant
+✓ Instructions are clear and actionable
+✓ Resources support learning objectives
+✓ Exercises match topic difficulty
 
-        Quiz Information:
-        Duration: {week_data.get('quiz', {}).get('duration', 'N/A')}
-        Format: {week_data.get('quiz', {}).get('format', 'N/A')}
-        Questions: {week_data.get('quiz', {}).get('numQuestions', 'N/A')}
-        """
+IMPORTANT:
+- Ground your resource suggestions in real, authoritative sources
+- Ensure all content directly supports learning objectives
+- Balance theoretical knowledge with practical application
+- Consider the quiz format: {week_data.get('quiz', {}).get('format', 'N/A')}
+- Target content for a {week_data.get('quiz', {}).get('duration', 'N/A')} duration
+
+Review and refine your response before submitting to ensure all requirements are met.
+"""
 
         client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
         config = GenerateContentConfig(
