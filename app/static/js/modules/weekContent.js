@@ -1,37 +1,142 @@
+import { configureMarkdown } from './renderer.js';
 import { renderWeeklyActivities, renderWeeklyQuiz } from './syllabus.js';
+
+const safeMarkdownParse = (text) => {
+    if (!text) return '';
+    try {
+        // Handle object or string input
+        const processedText = typeof text === 'object' ? 
+            (text.text || JSON.stringify(text)) : 
+            String(text);
+            
+        // Clean up any markdown formatting issues
+        const cleanText = processedText
+            .replace(/^#+\s*/, '')  // Remove leading #'s
+            .trim();
+            
+        return marked.parse(cleanText);
+    } catch (e) {
+        console.warn('Markdown parsing failed:', e);
+        return String(text);
+    }
+};
+
+const formatParagraphs = (text) => {
+    return text
+        // Split into paragraphs on double newlines
+        .split(/\n\n+/)
+        .filter(p => p.trim())
+        .map(p => `<p class="content-paragraph">${p.trim()}</p>`)
+        .join('\n');
+};
+
+const formatSectionContent = (content) => {
+    // First, split content into sections based on numbered headers
+    const sections = content.split(/(?=^\d+\.)/gm);
+    
+    return sections.map(section => {
+        // Process each section
+        const lines = section.split('\n');
+        let formattedSection = '';
+        
+        // Extract section title if it exists (numbered header)
+        if (lines[0].match(/^\d+\./)) {
+            formattedSection += `<h2 class="section-title">${lines.shift()}</h2>\n`;
+        }
+        
+        // Process remaining lines
+        const subsections = lines.join('\n').split(/(?=^\d+\.\d+\.)/gm);
+        
+        return subsections.map(subsection => {
+            const subLines = subsection.split('\n');
+            let formattedSubsection = '';
+            
+            // Extract subsection title if it exists
+            if (subLines[0].match(/^\d+\.\d+\./)) {
+                formattedSubsection += `<h3 class="subtopic-title">${subLines.shift()}</h3>\n`;
+            }
+            
+            // Group the remaining content
+            const paragraphs = subLines.join('\n')
+                .replace(/\*\*([^*]+)\*\*/g, '<span class="key-term">$1</span>')
+                .replace(/\*([^*]+)\*/g, '<em class="emphasis">$1</em>')
+                .replace(/^-\s+(.+)$/gm, '<li>$1</li>') // Convert bullet points
+                .replace(/(?:^|\n)>\s*([^\n]+)/g, '<blockquote class="quote-block">$1</blockquote>'); // Format quotes
+            
+            // Wrap bullet points in ul if they exist
+            const hasListItems = paragraphs.includes('<li>');
+            const formattedParagraphs = hasListItems ? 
+                paragraphs.replace(/(<li>.*<\/li>\n*)+/g, '<ul>$&</ul>') :
+                formatParagraphs(paragraphs);
+                
+            formattedSubsection += formattedParagraphs;
+            
+            return `<div class="subtopic">${formattedSubsection}</div>`;
+        }).join('\n');
+        
+    }).join('\n<hr class="separator">\n');
+};
+
+const formatSlides = (slides) => {
+    return `
+        <div class="slides-section">
+            <h2 class="section-header">Key Points</h2>
+            ${slides.map(slide => `
+                <div class="slide-item">${slide}</div>
+            `).join('')}
+        </div>
+    `;
+};
+
+const formatExamples = (examples) => {
+    if (!examples || !examples.length) return '';
+    
+    return `
+        <div class="examples-section">
+            <h2 class="section-header">Examples</h2>
+            ${examples.map(example => {
+                // Split example into title and details if it contains a colon
+                const [title, ...details] = example.split(':');
+                return `
+                    <div class="example-item">
+                        <h4>${title}${details.length ? ':' : ''}</h4>
+                        ${details.length ? `<p>${details.join(':').trim()}</p>` : ''}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+};
 
 const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
 
 export const renderWeeklyContent = (weekContent) => {
     if (!weekContent) return '<div class="error-message">No content available</div>';
     
+    // Validate content structure
     if (!weekContent.content || !weekContent.content.lecture) {
         console.error('Invalid content structure:', weekContent);
         return '<div class="error-message">Invalid content structure</div>';
     }
     
+    // Ensure arrays exist
     const lecture = weekContent.content.lecture;
     const resources = weekContent.content.resources || {};
     const exercises = ensureArray(weekContent.content.exercises);
     
     return `
         <div class="week-content-details">
-            <div class="lecture-content markdown-body">
-                ${marked.parse(lecture.notes)}
-            </div>
-
-            <div class="slides-section">
-                ${marked.parse(lecture.slides.join('\n'))}
-            </div>
-
-            <div class="examples-section">
-                ${marked.parse(lecture.examples.join('\n\n'))}
+            <div class="lecture-content">
+                <h2 class="section-header">Lecture Materials</h2>
+                ${formatSectionContent(lecture.notes)}
+                ${formatSlides(lecture.slides)}
+                ${formatExamples(lecture.examples)}
             </div>
 
             ${weekContent.content.activities ? renderWeeklyActivities(weekContent.content.activities) : ''}
-            ${renderResources(resources)}
+            ${renderResources(weekContent.content.resources || {})}
             ${weekContent.content.quiz ? renderWeeklyQuiz(weekContent.content.quiz) : ''}
-            ${renderExercises(exercises)}
+            ${renderExercises(weekContent.content.exercises || [])}
         </div>
     `;
 };
