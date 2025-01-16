@@ -142,39 +142,56 @@ const renderOptionalSections = (json) => {
 };
 
 export const renderWeeklyActivities = (activities) => {
-    if (!activities || activities.length === 0) return '';
+    if (!activities || !activities.length) return '';
     
     return `
         <div class="mt-4">
-            <h4 class="h5 mb-3">In-Class Activities</h4>
-            <div class="list-group">
-                ${activities.map(activity => `
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <strong>${activity.title}</strong>
-                            <span class="badge bg-secondary">${activity.duration}</span>
+            <div class="card border-primary border-opacity-25">
+                <div class="card-header bg-primary bg-opacity-10">
+                    <h4 class="h5 mb-0">In-Class Activities</h4>
+                </div>
+                <div class="list-group list-group-flush">
+                    ${activities.map(activity => `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="h6 mb-1">${activity.title}</h5>
+                                    <p class="mb-0 text-secondary">${activity.description}</p>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">${activity.duration}</span>
+                            </div>
                         </div>
-                        <p class="mb-0 mt-2">${activity.description}</p>
-                    </div>
-                `).join('')}
+                    `).join('')}
+                </div>
             </div>
         </div>
     `;
 };
 
 const renderWeeklyAssignments = (assignments) => {
-    if (!assignments || assignments.length === 0) return '';
+    if (!assignments || !assignments.length) return '';
     
     return `
-        <div class="assignments-section">
-            <h4>Assignments</h4>
-            ${assignments.map(assignment => `
-                <div class="assignment-item">
-                    <strong>${assignment.title}</strong>
-                    <div class="assignment-meta">Due: ${assignment.dueDate} | Weight: ${assignment.weightage}</div>
-                    <p>${assignment.description}</p>
+        <div class="mt-4">
+            <div class="card border-success border-opacity-25">
+                <div class="card-header bg-success bg-opacity-10">
+                    <h4 class="h5 mb-0">Assignments</h4>
                 </div>
-            `).join('')}
+                <div class="list-group list-group-flush">
+                    ${assignments.map(assignment => `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="h6 mb-0">${assignment.title}</h5>
+                                <div class="badges">
+                                    <span class="badge bg-warning text-dark me-1">Due: ${assignment.dueDate}</span>
+                                    <span class="badge bg-info">Weight: ${assignment.weightage}</span>
+                                </div>
+                            </div>
+                            <p class="mb-0 text-secondary">${assignment.description}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
         </div>
     `;
 };
@@ -183,18 +200,43 @@ export const renderWeeklyQuiz = (quiz) => {
     if (!quiz) return '';
     
     return `
-        <div class="quiz-section">
-            <h4>Quiz</h4>
-            <div class="quiz-header">
-                <strong>${quiz.title}</strong>
-            </div>
-            <div class="quiz-meta">
-                <ul>
-                    <li><strong>Duration:</strong> ${quiz.duration}</li>
-                    <li><strong>Format:</strong> ${quiz.format}</li>
-                    <li><strong>Questions:</strong> ${quiz.numQuestions}</li>
-                    <li><strong>Total Points:</strong> ${quiz.totalPoints}</li>
-                </ul>
+        <div class="mt-4">
+            <div class="card border-info border-opacity-25">
+                <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
+                    <h4 class="h5 mb-0">${quiz.title}</h4>
+                    <span class="badge bg-info">${quiz.duration}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clipboard-list text-info me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Format</small>
+                                    <strong>${quiz.format}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-question-circle text-info me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Questions</small>
+                                    <strong>${quiz.numQuestions}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-info me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Total Points</small>
+                                    <strong>${quiz.totalPoints}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;

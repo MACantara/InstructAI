@@ -169,24 +169,45 @@ const renderResources = (resources) => {
     return `
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">Additional Resources</h4>
+                <div class="card-header bg-light">
+                    <h4 class="mb-0">Learning Resources</h4>
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
                         ${resources.videos.length > 0 ? `
                             <div class="col-md-4">
-                                ${renderResourceSection('📺 Videos', resources.videos, 'video')}
+                                <div class="card h-100 border-primary border-opacity-25">
+                                    <div class="card-header bg-primary bg-opacity-10">
+                                        <h5 class="h6 mb-0">
+                                            <i class="fas fa-video me-2"></i>Video Resources
+                                        </h5>
+                                    </div>
+                                    ${renderResourceList(resources.videos, 'video')}
+                                </div>
                             </div>
                         ` : ''}
                         ${resources.articles.length > 0 ? `
                             <div class="col-md-4">
-                                ${renderResourceSection('📚 Articles', resources.articles, 'article')}
+                                <div class="card h-100 border-info border-opacity-25">
+                                    <div class="card-header bg-info bg-opacity-10">
+                                        <h5 class="h6 mb-0">
+                                            <i class="fas fa-book me-2"></i>Reading Materials
+                                        </h5>
+                                    </div>
+                                    ${renderResourceList(resources.articles, 'article')}
+                                </div>
                             </div>
                         ` : ''}
                         ${resources.tools.length > 0 ? `
                             <div class="col-md-4">
-                                ${renderResourceSection('🛠️ Tools', resources.tools, 'tool')}
+                                <div class="card h-100 border-success border-opacity-25">
+                                    <div class="card-header bg-success bg-opacity-10">
+                                        <h5 class="h6 mb-0">
+                                            <i class="fas fa-tools me-2"></i>Tools & Software
+                                        </h5>
+                                    </div>
+                                    ${renderResourceList(resources.tools, 'tool')}
+                                </div>
                             </div>
                         ` : ''}
                     </div>
@@ -196,41 +217,71 @@ const renderResources = (resources) => {
     `;
 };
 
-const renderResourceSection = (title, items, type) => {
+const renderResourceList = (items, type) => {
     return `
-        <div class="${type}s">
-            <h5>${title}</h5>
-            <ul>
-                ${items.map(item => `
-                    <li class="${item.url?.includes('vertexaisearch') ? 'meta-source' : ''}">
-                        <a href="${item.url}" target="_blank" rel="noopener">
-                            ${item.title || item.name}
-                        </a>
-                        <p>${item.description || item.purpose || item.relevance}</p>
-                    </li>
-                `).join('')}
-            </ul>
+        <div class="list-group list-group-flush">
+            ${items.map(item => `
+                <div class="list-group-item">
+                    <a href="${item.url}" class="text-decoration-none" target="_blank" rel="noopener">
+                        <h6 class="mb-1">${item.title || item.name}</h6>
+                    </a>
+                    <p class="mb-0 small text-secondary">
+                        ${item.description || item.purpose || item.relevance}
+                    </p>
+                </div>
+            `).join('')}
         </div>
     `;
 };
 
 const renderExercises = (exercises) => {
-    if (!exercises || exercises.length === 0) return '';
+    if (!exercises || !exercises.length) return '';
     
+    const difficultyClasses = {
+        beginner: 'border-success',
+        intermediate: 'border-warning',
+        advanced: 'border-danger',
+        unknown: 'border-secondary'
+    };
+    
+    const difficultyBadges = {
+        beginner: 'bg-success',
+        intermediate: 'bg-warning text-dark',
+        advanced: 'bg-danger',
+        unknown: 'bg-secondary'
+    };
+
     return `
-        <div class="exercises-section">
-            <h4>Exercises</h4>
-            ${exercises.map(exercise => `
-                <div class="exercise-item difficulty-${exercise.difficulty || 'unknown'}">
-                    <h5>${exercise.title || 'Untitled Exercise'}</h5>
-                    <p>${exercise.description || ''}</p>
-                    <ol>
-                        ${ensureArray(exercise.instructions).map(instruction => `
-                            <li>${instruction}</li>
-                        `).join('')}
-                    </ol>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Practice Exercises</h4>
                 </div>
-            `).join('')}
+                <div class="card-body">
+                    <div class="row g-4">
+                        ${exercises.map(exercise => `
+                            <div class="col-md-6">
+                                <div class="card h-100 ${difficultyClasses[exercise.difficulty || 'unknown']} border-opacity-50">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="h6 mb-0">${exercise.title || 'Untitled Exercise'}</h5>
+                                        <span class="badge ${difficultyBadges[exercise.difficulty || 'unknown']}">
+                                            ${exercise.difficulty || 'Unknown'} Level
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text text-secondary mb-3">${exercise.description || ''}</p>
+                                        <ol class="list-group list-group-numbered">
+                                            ${ensureArray(exercise.instructions).map(instruction => `
+                                                <li class="list-group-item">${instruction}</li>
+                                            `).join('')}
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 };
