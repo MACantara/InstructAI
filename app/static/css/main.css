@@ -30,7 +30,7 @@
 }
 
 .exercise-item.difficulty-beginner { border-left-color: var(--bs-success); }
-exercise-item.difficulty-intermediate { border-left-color: var(--bs-warning); }
+.exercise-item.difficulty-intermediate { border-left-color: var(--bs-warning); }
 .exercise-item.difficulty-advanced { border-left-color: var(--bs-danger); }
 
 /* Maintain any other custom styles that Bootstrap doesn't cover */
