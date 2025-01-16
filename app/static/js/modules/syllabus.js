@@ -105,36 +105,71 @@ const renderOptionalSections = (json) => {
     
     if (json.learningObjectives) {
         html += `
-            <div class="objectives">
-                <h2>Learning Objectives</h2>
-                <ul>
-                    ${json.learningObjectives.map(obj => `<li>${obj}</li>`).join('')}
-                </ul>
+            <div class="card mt-4">
+                <div class="card-header bg-success bg-opacity-10">
+                    <h2 class="h4 mb-0 text-success">Learning Objectives</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        ${json.learningObjectives.map((obj, index) => `
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-check text-success"></i>
+                                    </div>
+                                    <div>
+                                        <p class="mb-0">${obj}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
             </div>`;
     }
     
     if (json.readings) {
         html += `
-            <div class="readings">
-                <h2>Required Readings</h2>
-                <ul>
-                    ${json.readings.required.map(reading => `
-                        <li>
-                            <strong>${reading.title}</strong> by ${reading.author}
-                            <p>${reading.description}</p>
-                        </li>
-                    `).join('')}
-                </ul>
-
-                <h3>Recommended Readings</h3>
-                <ul>
-                    ${json.readings.recommended.map(reading => `
-                        <li>
-                            <strong>${reading.title}</strong> by ${reading.author}
-                            <p>${reading.description}</p>
-                        </li>
-                    `).join('')}
-                </ul>
+            <div class="card mt-4">
+                <div class="card-header bg-primary bg-opacity-10">
+                    <h2 class="h4 mb-0 text-primary">Course Readings</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        <div class="col-md-6 border-end">
+                            <div class="p-4">
+                                <h3 class="h5 mb-3 text-primary">
+                                    <i class="fas fa-book-reader me-2"></i>Required Readings
+                                </h3>
+                                <div class="list-group list-group-flush">
+                                    ${json.readings.required.map(reading => `
+                                        <div class="list-group-item px-0">
+                                            <h4 class="h6 mb-1">${reading.title}</h4>
+                                            <p class="small text-muted mb-2">by ${reading.author}</p>
+                                            <p class="mb-0 small">${reading.description}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-4">
+                                <h3 class="h5 mb-3 text-secondary">
+                                    <i class="fas fa-book me-2"></i>Recommended Readings
+                                </h3>
+                                <div class="list-group list-group-flush">
+                                    ${json.readings.recommended.map(reading => `
+                                        <div class="list-group-item px-0">
+                                            <h4 class="h6 mb-1">${reading.title}</h4>
+                                            <p class="small text-muted mb-2">by ${reading.author}</p>
+                                            <p class="mb-0 small">${reading.description}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>`;
     }
     
