@@ -1,0 +1,36 @@
+:root {
+    --bs-primary: #3498db;
+    --bs-secondary: #2ecc71;
+}
+
+/* Custom styles that extend Bootstrap */
+.markdown-body {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.week-block {
+    border-left: 4px solid var(--bs-primary);
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bs-light);
+    border-radius: 0.375rem;
+}
+
+.topic-item {
+    background: var(--bs-white);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.exercise-item {
+    border-left: 4px solid var(--bs-primary);
+}
+
+.exercise-item.difficulty-beginner { border-left-color: var(--bs-success); }
+exercise-item.difficulty-intermediate { border-left-color: var(--bs-warning); }
+.exercise-item.difficulty-advanced { border-left-color: var(--bs-danger); }
+
+/* Maintain any other custom styles that Bootstrap doesn't cover */

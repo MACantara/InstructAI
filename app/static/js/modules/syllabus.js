@@ -27,56 +27,76 @@ export const renderSyllabus = (response) => {
     }
 
     return `
-        <div class="syllabus-header">
-            <h1>${json.title || 'Untitled Syllabus'}</h1>
-        </div>
-        
-        <div class="course-info">
-            <div class="course-description">
-                <h2>Course Description</h2>
-                ${typeof json.courseDescription === 'string' ? 
-                    marked.parse(json.courseDescription) : 
-                    'No description available'}
-            </div>
-            
-            <div class="course-structure">
-                <h2>Course Structure</h2>
-                <ul>
-                    <li><strong>Duration:</strong> ${json.courseStructure.duration}</li>
-                    <li><strong>Format:</strong> ${json.courseStructure.format}</li>
-                    <li><strong>Assessment:</strong> ${json.courseStructure.assessment}</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="weekly-topics">
-            <h2>Weekly Topics</h2>
-            ${validWeeks.map(week => `
-                <div class="week-block">
-                    <h3>Week ${week.week}: ${week.mainTopic}</h3>
-                    <div class="week-content">
-                        ${marked.parse(week.description)}
-                        <div class="topics-list">
-                            ${week.topics.map(topic => `
-                                <div class="topic-item">
-                                    <h4>${topic.subtitle}</h4>
-                                    <ul>
-                                        ${topic.points.map(point => `<li>${point}</li>`).join('')}
-                                    </ul>
-                                </div>
-                            `).join('')}
+        <div class="container-fluid p-0">
+            <div class="mb-4">
+                <h1 class="display-5 text-primary">${json.title || 'Untitled Syllabus'}</h1>
+                
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body prose">
+                                <h2 class="card-title h4">Course Description</h2>
+                                ${typeof json.courseDescription === 'string' ? 
+                                    marked.parse(json.courseDescription) : 
+                                    'No description available'}
+                            </div>
                         </div>
-                        
-                        ${renderWeeklyActivities(week.activities)}
-                        ${renderWeeklyAssignments(week.assignments)}
-                        ${renderWeeklyQuiz(week.quiz)}
-                        
-                        <button class="load-content-btn" data-week="${week.week}">Load Detailed Content</button>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h2 class="card-title h4">Course Structure</h2>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><span class="fw-bold">Duration:</span> ${json.courseStructure.duration}</li>
+                                    <li class="mb-2"><span class="fw-bold">Format:</span> ${json.courseStructure.format}</li>
+                                    <li class="mb-2"><span class="fw-bold">Assessment:</span> ${json.courseStructure.assessment}</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            `).join('')}
+            </div>
+
+            <div class="weekly-topics mt-5">
+                <h2 class="h3 mb-4">Weekly Topics</h2>
+                ${validWeeks.map(week => `
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h3 class="h5 mb-0">Week ${week.week}: ${week.mainTopic}</h3>
+                        </div>
+                        <div class="card-body">
+                            ${marked.parse(week.description)}
+                            <div class="row g-3 mt-3">
+                                ${week.topics.map(topic => `
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h4 class="h6 card-title">${topic.subtitle}</h4>
+                                                <ul class="list-group list-group-flush">
+                                                    ${topic.points.map(point => `
+                                                        <li class="list-group-item">${point}</li>
+                                                    `).join('')}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            ${renderWeeklyActivities(week.activities)}
+                            ${renderWeeklyAssignments(week.assignments)}
+                            ${renderWeeklyQuiz(week.quiz)}
+                            
+                            <button class="btn btn-primary mt-3 load-content-btn" data-week="${week.week}">
+                                Load Detailed Content
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            ${renderOptionalSections(json)}
         </div>
-        ${renderOptionalSections(json)}
     `;
 };
 
@@ -125,14 +145,19 @@ export const renderWeeklyActivities = (activities) => {
     if (!activities || activities.length === 0) return '';
     
     return `
-        <div class="activities-section">
-            <h4>In-Class Activities</h4>
-            ${activities.map(activity => `
-                <div class="activity-item">
-                    <strong>${activity.title}</strong> (${activity.duration})
-                    <p>${activity.description}</p>
-                </div>
-            `).join('')}
+        <div class="mt-4">
+            <h4 class="h5 mb-3">In-Class Activities</h4>
+            <div class="list-group">
+                ${activities.map(activity => `
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>${activity.title}</strong>
+                            <span class="badge bg-secondary">${activity.duration}</span>
+                        </div>
+                        <p class="mb-0 mt-2">${activity.description}</p>
+                    </div>
+                `).join('')}
+            </div>
         </div>
     `;
 };

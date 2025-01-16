@@ -5,33 +5,47 @@
 {% endblock %}
 
 {% block content %}
-<div class="index-container">
-    <h1 class="index-header">Syllabus Generator</h1>
-    <div class="ai-interface">
-        <form id="syllabusForm" onsubmit="return false;">
-            <div class="input-group">
-                <label for="topic">Enter Course Topic</label>
-                <textarea id="topic" name="topic" class="prompt-input" 
-                    placeholder="e.g., Introduction to Machine Learning, Web Development 101, etc." 
-                    required></textarea>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="text-center mb-4 text-primary">Syllabus Generator</h1>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form id="syllabusForm" onsubmit="return false;">
+                        <div class="mb-3">
+                            <label for="topic" class="form-label">Enter Course Topic</label>
+                            <textarea id="topic" name="topic" class="form-control" rows="3"
+                                placeholder="e.g., Introduction to Machine Learning, Web Development 101, etc." 
+                                required></textarea>
+                        </div>
+                        <div class="mb-3 d-flex gap-4">
+                            <div class="form-check">
+                                <input type="checkbox" id="includeObjectives" class="form-check-input" checked>
+                                <label class="form-check-label" for="includeObjectives">
+                                    Include Learning Objectives
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" id="includeReadings" class="form-check-input" checked>
+                                <label class="form-check-label" for="includeReadings">
+                                    Include Recommended Readings
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" id="generate" class="btn btn-primary w-100">Generate Syllabus</button>
+                    </form>
+                </div>
             </div>
-            <div class="options-group">
-                <label>
-                    <input type="checkbox" id="includeObjectives" checked>
-                    Include Learning Objectives
-                </label>
-                <label>
-                    <input type="checkbox" id="includeReadings" checked>
-                    Include Recommended Readings
-                </label>
+            
+            <div id="response" class="mt-4 card shadow-sm">
+                <div class="card-body"></div>
             </div>
-            <button type="submit" id="generate" class="cta-button">Generate Syllabus</button>
-        </form>
-        <div id="response" class="response-area"></div>
-        <div id="bulk-actions" class="bulk-actions" style="display: none;">
-            <button id="generateAllContent" class="secondary-button">
-                <i class="fas fa-list-check"></i> Generate All Weekly Content
-            </button>
+            
+            <div id="bulk-actions" class="mt-4 d-none">
+                <button id="generateAllContent" class="btn btn-secondary w-100">
+                    <i class="fas fa-list-check me-2"></i>Generate All Weekly Content
+                </button>
+            </div>
         </div>
     </div>
 </div>

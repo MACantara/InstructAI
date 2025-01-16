@@ -111,7 +111,7 @@ const formatExamples = (examples) => {
 const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
 
 export const renderWeeklyContent = (weekContent) => {
-    if (!weekContent) return '<div class="error-message">No content available</div>';
+    if (!weekContent) return '<div class="alert alert-danger">No content available</div>';
     
     // Validate content structure
     if (!weekContent.content || !weekContent.content.lecture) {
@@ -125,27 +125,74 @@ export const renderWeeklyContent = (weekContent) => {
     const exercises = ensureArray(weekContent.content.exercises);
     
     return `
-        <div class="week-content-details">
-            <div class="lecture-content">
-                <h2 class="section-header">Lecture Materials</h2>
-                ${formatSectionContent(lecture.notes)}
-                ${formatSlides(lecture.slides)}
-                ${formatExamples(lecture.examples)}
-            </div>
+        <div class="container-fluid p-0">
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0">Lecture Materials</h4>
+                        </div>
+                        <div class="card-body prose">
+                            ${safeMarkdownParse(lecture.notes)}
+                            
+                            <div class="mt-4">
+                                <h5>Key Points</h5>
+                                <ul class="list-group">
+                                    ${lecture.slides.map(slide => `
+                                        <li class="list-group-item">${slide}</li>
+                                    `).join('')}
+                                </ul>
+                            </div>
 
-            ${weekContent.content.activities ? renderWeeklyActivities(weekContent.content.activities) : ''}
-            ${renderResources(weekContent.content.resources || {})}
-            ${weekContent.content.quiz ? renderWeeklyQuiz(weekContent.content.quiz) : ''}
-            ${renderExercises(weekContent.content.exercises || [])}
+                            ${lecture.examples.length > 0 ? `
+                                <div class="mt-4">
+                                    <h5>Examples</h5>
+                                    <div class="bg-light p-3 rounded">
+                                        <pre class="mb-0"><code>${lecture.examples.join('\n\n')}</code></pre>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                ${weekContent.content.activities ? renderWeeklyActivities(weekContent.content.activities) : ''}
+                ${renderResources(weekContent.content.resources || {})}
+                ${weekContent.content.quiz ? renderWeeklyQuiz(weekContent.content.quiz) : ''}
+                ${renderExercises(weekContent.content.exercises || [])}
+            </div>
         </div>
     `;
 };
 
 const renderResources = (resources) => {
     return `
-        ${resources.videos.length > 0 ? renderResourceSection('📺 Videos', resources.videos, 'video') : ''}
-        ${resources.articles.length > 0 ? renderResourceSection('📚 Articles', resources.articles, 'article') : ''}
-        ${resources.tools.length > 0 ? renderResourceSection('🛠️ Tools', resources.tools, 'tool') : ''}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Additional Resources</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        ${resources.videos.length > 0 ? `
+                            <div class="col-md-4">
+                                ${renderResourceSection('📺 Videos', resources.videos, 'video')}
+                            </div>
+                        ` : ''}
+                        ${resources.articles.length > 0 ? `
+                            <div class="col-md-4">
+                                ${renderResourceSection('📚 Articles', resources.articles, 'article')}
+                            </div>
+                        ` : ''}
+                        ${resources.tools.length > 0 ? `
+                            <div class="col-md-4">
+                                ${renderResourceSection('🛠️ Tools', resources.tools, 'tool')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 };
 

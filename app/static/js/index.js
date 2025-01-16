@@ -20,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const generateAllBtn = document.getElementById('generateAllContent');
 
         if (error) {
-            weekContainer.innerHTML = `<div class="error-message">
-                <i class="fas fa-exclamation-circle"></i> Failed to generate content
-            </div>`;
+            weekContainer.innerHTML = `
+                <div class="alert alert-danger d-flex align-items-center gap-2">
+                    <i class="fas fa-exclamation-circle"></i> Failed to generate content
+                </div>`;
         } else {
             const viewButton = document.createElement('button');
-            viewButton.className = 'view-content-btn';
+            viewButton.className = 'btn btn-primary d-inline-flex align-items-center gap-2';
             viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
             viewButton.onclick = () => openWeekContent(weekNum, topic, content);
             weekContainer.innerHTML = '';
@@ -33,13 +34,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (generateAllBtn) {
-            generateAllBtn.innerHTML = completedCount === totalCount ? 
-                '<i class="fas fa-check"></i> Content Generation Complete' :
-                `<i class="fas fa-spinner fa-spin"></i> Generating Content (${completedCount}/${totalCount})`;
+            const buttonText = completedCount === totalCount ? 
+                '<i class="fas fa-check me-2"></i> Content Generation Complete' :
+                `<i class="fas fa-spinner fa-spin me-2"></i> Generating Content (${completedCount}/${totalCount})`;
+            
+            generateAllBtn.innerHTML = buttonText;
+            generateAllBtn.className = `btn w-100 d-flex align-items-center justify-content-center ${
+                completedCount === totalCount ? 
+                'btn-success' : 
+                'btn-primary'
+            }`;
+            generateAllBtn.disabled = completedCount !== totalCount;
         }
     };
 
-    // Event Handlers
     elements.form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const topic = elements.topicInput.value.trim();
@@ -47,8 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             elements.generateBtn.disabled = true;
-            elements.generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Syllabus...';
-            elements.responseArea.innerHTML = '<div class="loading">🎓 Creating your syllabus...</div>';
+            elements.generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generating Syllabus...';
+            elements.generateBtn.classList.add('disabled');
+            
+            elements.responseArea.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center p-4">
+                    <div class="text-primary">
+                        <i class="fas fa-graduation-cap fa-2x me-3"></i>
+                        Creating your syllabus...
+                    </div>
+                </div>`;
 
             const response = await fetch('/generate', {
                 method: 'POST',
@@ -68,14 +84,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Update response area with structured syllabus and sources
             elements.responseArea.innerHTML = `
-                <div class="syllabus-content markdown-body">
-                    ${renderSyllabus(data.response)}
-                </div>
-                ${renderMetadata(data.response.metadata)}
-            `;
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="syllabus-content prose">
+                            ${renderSyllabus(data.response)}
+                        </div>
+                        ${renderMetadata(data.response.metadata)}
+                    </div>
+                </div>`;
 
             // Show bulk actions after successful syllabus generation
-            elements.bulkActions.style.display = 'block';
+            elements.bulkActions.classList.remove('d-none');
             
             // Add event listener for bulk generation
             document.getElementById('generateAllContent').addEventListener('click', () => {
@@ -88,14 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error:', error);
             elements.responseArea.innerHTML = `
-                <div class="error-message">
+                <div class="alert alert-danger d-flex align-items-center gap-3">
                     <i class="fas fa-exclamation-circle"></i>
-                    Error generating syllabus: ${error.message}
-                </div>
-            `;
+                    <span>Error generating syllabus: ${error.message}</span>
+                </div>`;
         } finally {
             elements.generateBtn.disabled = false;
             elements.generateBtn.innerHTML = 'Generate Syllabus';
+            elements.generateBtn.classList.remove('disabled');
         }
     });
 
@@ -107,7 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generating...';
+                btn.classList.add('disabled');
                 
                 const contentResponse = await fetch('/generate/week-content', {
                     method: 'POST',
@@ -120,14 +140,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Replace button with view button
                 const viewButton = document.createElement('button');
-                viewButton.className = 'view-content-btn';
+                viewButton.className = 'btn btn-primary d-inline-flex align-items-center gap-2';
                 viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
                 viewButton.onclick = () => openWeekContent(weekNum, weekData.mainTopic, data.content);
                 
                 btn.replaceWith(viewButton);
             } catch (error) {
                 console.error('Error:', error);
-                btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error generating content';
+                btn.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Error generating content';
+                btn.classList.replace('btn-primary', 'btn-danger');
             }
         }
     });

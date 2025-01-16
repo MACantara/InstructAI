@@ -2,20 +2,18 @@
 
 {% block title %}Week {{ week_number }} - {{ topic }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/week_content.css') }}">
-{% endblock %}
-
 {% block content %}
-<div class="week-container">
-    <div class="week-header">
-        <h1>Week {{ week_number }}: {{ topic }}</h1>
-        <a href="javascript:window.close();" class="close-btn">
-            <i class="fas fa-times"></i> Close
-        </a>
-    </div>
-    <div class="week-content-details">
-        {{ content|safe }}
+<div class="container py-4">
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">Week {{ week_number }}: {{ topic }}</h1>
+            <button onclick="window.close();" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+        <div class="card-body">
+            {{ content|safe }}
+        </div>
     </div>
 </div>
 {% endblock %}
