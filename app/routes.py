@@ -36,25 +36,32 @@ def generate_week_content():
     """Generate detailed content for a specific week"""
     try:
         data = request.json
-        if not data or 'weekData' not in data:
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        if 'weekData' not in data:
             return jsonify({'error': 'No week data provided'}), 400
 
-        week_data = data['weekData']
-        course_id = data.get('courseId')  # Get course_id from request
-
-        if not course_id:
+        if 'courseId' not in data:
             return jsonify({'error': 'Course ID is required'}), 400
+
+        week_data = data['weekData']
+        course_id = data.get('courseId')
+
+        try:
+            course_id = int(course_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid course ID format'}), 400
 
         if not isinstance(week_data, dict):
             return jsonify({'error': 'Invalid week data format'}), 400
 
-        current_app.logger.info(f'Generating content for week {week_data.get("week", "unknown")}')
+        current_app.logger.info(f'Generating content for week {week_data.get("week", "unknown")} of course {course_id}')
         
-        # Generate detailed content for the week
         content = generate_weekly_content(
             topic=week_data.get('mainTopic', ''),
             week_data=week_data,
-            course_id=course_id  # Pass course_id to the function
+            course_id=course_id
         )
         
         if content is None:
@@ -65,7 +72,8 @@ def generate_week_content():
             
         return jsonify({
             'content': content,
-            'week': week_data.get('week')
+            'week': week_data.get('week'),
+            'course_id': course_id
         })
         
     except Exception as e:
