@@ -1,15 +1,14 @@
-from app import create_app
-from config import config
+import os
+import sys
 
-# Create the app instance for Vercel
-app = create_app('production')
+# Add project root to Python path
+project_root = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, project_root)
+
+from app import create_app
+
+env = os.getenv('FLASK_ENV', 'development')
+app = create_app(env)
 
 if __name__ == '__main__':
-    # This block will only run for local development
-    config_name = 'development'
-    app = create_app(config_name)
-    app.run(
-        host=app.config['HOST'],
-        port=app.config['PORT'],
-        debug=app.config['DEBUG']
-    )
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
