@@ -286,15 +286,27 @@ const renderExercises = (exercises) => {
     `;
 };
 
-export const openWeekContent = (weekNumber, topic, content) => {
+export const openWeekContent = async (weekNumber, weeklyTopicId, courseId) => {
     try {
-        const contentHtml = renderWeeklyContent(content);
+        // Fetch content from API instead of passing through URL
+        const response = await fetch(`/api/week-content/${weeklyTopicId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Open content in new window with just the IDs
         const params = new URLSearchParams({
-            content: contentHtml,
-            topic: topic || 'Weekly Content'
+            id: weeklyTopicId,
+            course_id: courseId
         });
-        window.open(`/week-content/${weekNumber}?${params}`, `week${weekNumber}`,
-            'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
+        
+        window.open(
+            `/week-content/${weekNumber}?${params}`,
+            `week${weekNumber}`,
+            'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no'
+        );
     } catch (error) {
         console.error('Error opening week content:', error);
         alert('Failed to open week content. Please try again.');
@@ -311,14 +323,21 @@ export const generateAllWeeklyContent = async (weeks, courseId, updateUI) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     weekData: week,
-                    courseId: courseId  // Add courseId to request
+                    courseId: courseId
                 })
             });
             
             const data = await contentResponse.json();
             if (data.error) throw new Error(data.error);
             
-            updateUI(week.week, week.mainTopic, data.content, ++completedCount, weeks.length);
+            // Pass weekly_topic_id instead of full content
+            updateUI(
+                week.week, 
+                data.weekly_topic_id, 
+                courseId,
+                ++completedCount, 
+                weeks.length
+            );
             
         } catch (error) {
             console.error(`Error generating content for week ${week.week}:`, error);
