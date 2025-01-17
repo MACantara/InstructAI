@@ -288,7 +288,16 @@ const renderExercises = (exercises) => {
 
 export const openWeekContent = async (weekNumber, weeklyTopicId, courseId) => {
     try {
-        // Fetch content from API instead of passing through URL
+        // Validate IDs before making request
+        if (!weeklyTopicId || weeklyTopicId === 'undefined') {
+            throw new Error('Invalid weekly topic ID');
+        }
+
+        if (!courseId || courseId === 'undefined') {
+            throw new Error('Invalid course ID');
+        }
+
+        // Fetch content from API
         const response = await fetch(`/api/week-content/${weeklyTopicId}`);
         const data = await response.json();
         
@@ -296,7 +305,7 @@ export const openWeekContent = async (weekNumber, weeklyTopicId, courseId) => {
             throw new Error(data.error);
         }
 
-        // Open content in new window with just the IDs
+        // Open content in new window with IDs
         const params = new URLSearchParams({
             id: weeklyTopicId,
             course_id: courseId
@@ -309,7 +318,7 @@ export const openWeekContent = async (weekNumber, weeklyTopicId, courseId) => {
         );
     } catch (error) {
         console.error('Error opening week content:', error);
-        alert('Failed to open week content. Please try again.');
+        alert(`Failed to open week content: ${error.message}`);
     }
 };
 
