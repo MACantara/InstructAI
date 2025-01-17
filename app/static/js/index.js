@@ -96,9 +96,22 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show bulk actions after successful syllabus generation
             elements.bulkActions.classList.remove('d-none');
             
-            // Add event listener for bulk generation
+            if (data.response.course_id) {
+                // Store course_id globally for use in weekly content generation
+                window.courseId = data.response.course_id;
+            }
+
+            // Update bulk generation event listener to include courseId
             document.getElementById('generateAllContent').addEventListener('click', () => {
-                generateAllWeeklyContent(data.response.raw_json.weeklyTopics, updateWeekContentUI);
+                if (!window.courseId) {
+                    console.error('No course ID available');
+                    return;
+                }
+                generateAllWeeklyContent(
+                    data.response.raw_json.weeklyTopics, 
+                    window.courseId,  // Pass the stored courseId
+                    updateWeekContentUI
+                );
             });
             
             // Store syllabus data globally
@@ -124,6 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const weekNum = btn.dataset.week;
             const weekData = window.syllabusData.weeklyTopics.find(w => w.week == weekNum);
             
+            if (!window.courseId) {
+                console.error('No course ID available');
+                return;
+            }
+
             try {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generating...';
@@ -132,7 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const contentResponse = await fetch('/generate/week-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ weekData })
+                    body: JSON.stringify({ 
+                        weekData,
+                        courseId: window.courseId  // Include courseId in request
+                    })
                 });
                 
                 const data = await contentResponse.json();
