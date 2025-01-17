@@ -73,6 +73,7 @@ def generate_week_content():
         return jsonify({
             'content': content,
             'week': week_data.get('week'),
+            'weekly_topic_id': content.get('weekly_topic_id'),  # Include weekly_topic_id
             'course_id': course_id
         })
         
