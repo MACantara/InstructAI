@@ -3,9 +3,9 @@ from flask import Flask, render_template
 from dotenv import load_dotenv
 import logging
 from logging.config import dictConfig
-from config import config  # Changed from relative to absolute import
+from config import config
 
-# Configure logging before app creation
+# Configure logging with just stream handler
 dictConfig({
     'version': 1,
     'formatters': {
@@ -18,16 +18,11 @@ dictConfig({
             'class': 'logging.StreamHandler',
             'stream': 'ext://flask.logging.wsgi_errors_stream',
             'formatter': 'default'
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': 'app.log',
-            'formatter': 'default'
         }
     },
     'root': {
         'level': 'INFO',
-        'handlers': ['wsgi', 'file']
+        'handlers': ['wsgi']
     }
 })
 

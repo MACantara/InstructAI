@@ -11,21 +11,25 @@ class Config:
     POSTGRES_URL_NON_POOLING = os.getenv('POSTGRES_URL_NON_POOLING')
     STATIC_FOLDER = 'static'
     TEMPLATES_FOLDER = 'templates'
+    LOG_PATH = os.getenv('LOG_PATH', os.path.join(os.getcwd(), 'logs'))
 
 class DevelopmentConfig(Config):
     FLASK_ENV = 'development'
     DEBUG = True
     TESTING = False
+    LOG_PATH = os.path.join(os.getcwd(), 'logs', 'development')
 
 class TestingConfig(Config):
     FLASK_ENV = 'testing'
     DEBUG = True
     TESTING = True
+    LOG_PATH = os.path.join(os.getcwd(), 'logs', 'testing')
 
 class ProductionConfig(Config):
     FLASK_ENV = 'production'
     DEBUG = False
     TESTING = False
+    LOG_PATH = '/tmp/logs'  # Use /tmp for production environments
 
 config = {
     'development': DevelopmentConfig,
