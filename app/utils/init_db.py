@@ -131,6 +131,48 @@ def init_db():
         cur.execute(indexes)
         logger.info("Successfully created indexes")
         
+        # Add new tables for additional content
+        additional_tables = """
+        -- Key Points table
+        CREATE TABLE IF NOT EXISTS key_points (
+            id SERIAL PRIMARY KEY,
+            weekly_topic_id INTEGER REFERENCES weekly_topics(id) ON DELETE CASCADE,
+            content TEXT NOT NULL,
+            order_index INTEGER NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Examples table
+        CREATE TABLE IF NOT EXISTS examples (
+            id SERIAL PRIMARY KEY,
+            weekly_topic_id INTEGER REFERENCES weekly_topics(id) ON DELETE CASCADE,
+            title TEXT,
+            content TEXT NOT NULL,
+            code_snippet TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Practice Exercises table
+        CREATE TABLE IF NOT EXISTS practice_exercises (
+            id SERIAL PRIMARY KEY,
+            weekly_topic_id INTEGER REFERENCES weekly_topics(id) ON DELETE CASCADE,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            difficulty VARCHAR(50),
+            instructions JSONB,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Additional indexes
+        CREATE INDEX IF NOT EXISTS idx_key_points_weekly_topic_id ON key_points(weekly_topic_id);
+        CREATE INDEX IF NOT EXISTS idx_examples_weekly_topic_id ON examples(weekly_topic_id);
+        CREATE INDEX IF NOT EXISTS idx_practice_exercises_weekly_topic_id ON practice_exercises(weekly_topic_id);
+        """
+        
+        # Execute additional tables creation
+        cur.execute(additional_tables)
+        logger.info("Successfully created additional content tables")
+        
     except Exception as e:
         logger.error(f"Database initialization failed: {str(e)}")
         raise
