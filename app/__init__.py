@@ -3,6 +3,7 @@ from flask import Flask, render_template
 from dotenv import load_dotenv
 import logging
 from logging.config import dictConfig
+from config import config  # Changed from relative to absolute import
 
 # Configure logging before app creation
 dictConfig({
@@ -31,26 +32,26 @@ dictConfig({
 })
 
 def create_app(config_name='default'):
+    """Application factory function"""
     # Load environment variables
     load_dotenv()
     
     app = Flask(__name__)
+    
+    # Load config
     app.config.from_object(config[config_name])
     
     # Register blueprints
     from .routes import main_bp
     app.register_blueprint(main_bp)
     
-    # Register error handlers
-    register_error_handlers(app)
-    
-    return app
-
-def register_error_handlers(app):
+    # Error handlers
     @app.errorhandler(404)
     def not_found_error(error):
-        return render_template('errors/404.html'), 404
+        return render_template('404.html'), 404
 
     @app.errorhandler(500)
     def internal_error(error):
-        return render_template('errors/500.html'), 500
+        return render_template('500.html'), 500
+        
+    return app
