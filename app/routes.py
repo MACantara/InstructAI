@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
 import traceback
 from .utils.ai_helper import generate_response
-from .utils.content_generator import generate_weekly_content
+from .utils.content_generator import generate_weekly_content, retrieve_weekly_content
 
 main_bp = Blueprint('main', __name__)
 
@@ -87,12 +87,33 @@ def generate_week_content():
 @main_bp.route('/week-content/<int:week_number>')
 def view_week_content(week_number):
     try:
-        content = request.args.get('content', '')
-        topic = request.args.get('topic', '')
+        weekly_topic_id = request.args.get('id')
+        course_id = request.args.get('course_id')
+        
+        if not weekly_topic_id:
+            return jsonify({'error': 'Weekly topic ID is required'}), 400
+            
+        # Retrieve content from database
+        content = retrieve_weekly_content(weekly_topic_id)
+        if not content:
+            return jsonify({'error': 'Content not found'}), 404
+            
         return render_template('week_content.html', 
                              week_number=week_number,
-                             topic=topic,
+                             topic=content.get('topic', ''),
                              content=content)
     except Exception as e:
         current_app.logger.error(f'Error displaying week content: {str(e)}')
         return jsonify({'error': 'Failed to display content'}), 500
+
+@main_bp.route('/api/week-content/<int:weekly_topic_id>')
+def get_week_content(weekly_topic_id):
+    """API endpoint to fetch week content by ID"""
+    try:
+        content = retrieve_weekly_content(weekly_topic_id)
+        if not content:
+            return jsonify({'error': 'Content not found'}), 404
+        return jsonify({'content': content})
+    except Exception as e:
+        current_app.logger.error(f'Error retrieving week content: {str(e)}')
+        return jsonify({'error': 'Failed to retrieve content'}), 500
