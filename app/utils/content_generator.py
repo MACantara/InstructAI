@@ -147,6 +147,46 @@ def store_weekly_content(course_id, week_data, generated_content):
                     VALUES (%s, 'tool', %s, %s, %s)
                 """, (weekly_topic_id, tool['name'], tool['url'], tool.get('purpose', '')))
         
+        # Store key points
+        if 'lecture' in generated_content['content']:
+            lecture = generated_content['content']['lecture']
+            
+            # Store slides as key points
+            for idx, point in enumerate(lecture.get('slides', [])):
+                cur.execute("""
+                    INSERT INTO key_points (weekly_topic_id, content, order_index)
+                    VALUES (%s, %s, %s)
+                """, (weekly_topic_id, point, idx))
+            
+            # Store examples
+            for example in lecture.get('examples', []):
+                title = None
+                content = example
+                
+                # Check if example contains a title (separated by colon)
+                if ':' in example:
+                    title, content = example.split(':', 1)
+                
+                cur.execute("""
+                    INSERT INTO examples (weekly_topic_id, title, content)
+                    VALUES (%s, %s, %s)
+                """, (weekly_topic_id, title, content.strip()))
+        
+        # Store practice exercises
+        if 'exercises' in generated_content['content']:
+            for exercise in generated_content['content']['exercises']:
+                cur.execute("""
+                    INSERT INTO practice_exercises 
+                    (weekly_topic_id, title, description, difficulty, instructions)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    exercise['title'],
+                    exercise['description'],
+                    exercise['difficulty'],
+                    Json(exercise.get('instructions', []))
+                ))
+        
         conn.commit()
         return weekly_topic_id
         
@@ -154,6 +194,71 @@ def store_weekly_content(course_id, week_data, generated_content):
         logger.error(f"Error storing weekly content: {str(e)}")
         if 'conn' in locals():
             conn.rollback()
+        return None
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
+
+def retrieve_weekly_content(weekly_topic_id):
+    """Retrieve complete weekly content from database"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Get main content
+        cur.execute("""
+            SELECT content FROM weekly_topics WHERE id = %s
+        """, (weekly_topic_id,))
+        content = cur.fetchone()
+        
+        if not content:
+            return None
+            
+        result = content[0]
+        
+        # Get key points
+        cur.execute("""
+            SELECT content FROM key_points 
+            WHERE weekly_topic_id = %s 
+            ORDER BY order_index
+        """, (weekly_topic_id,))
+        key_points = [row[0] for row in cur.fetchall()]
+        
+        # Get examples
+        cur.execute("""
+            SELECT title, content FROM examples 
+            WHERE weekly_topic_id = %s
+        """, (weekly_topic_id,))
+        examples = [{
+            'title': row[0],
+            'content': row[1]
+        } for row in cur.fetchall()]
+        
+        # Get practice exercises
+        cur.execute("""
+            SELECT title, description, difficulty, instructions 
+            FROM practice_exercises 
+            WHERE weekly_topic_id = %s
+        """, (weekly_topic_id,))
+        exercises = [{
+            'title': row[0],
+            'description': row[1],
+            'difficulty': row[2],
+            'instructions': row[3]
+        } for row in cur.fetchall()]
+        
+        # Merge all content
+        if isinstance(result, dict):
+            result['content']['lecture']['slides'] = key_points
+            result['content']['examples'] = examples
+            result['content']['exercises'] = exercises
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error retrieving weekly content: {str(e)}")
         return None
     finally:
         if 'cur' in locals():
