@@ -3,17 +3,38 @@ from google.genai.types import Tool, GenerateContentConfig, GoogleSearch, Part
 from flask import current_app
 import logging
 import json
+import psycopg2
+from psycopg2.extras import Json
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Ensure debug logs are captured
 logger.propagate = False
 
+def get_db_connection():
+    """Get database connection using environment variables"""
+    try:
+        return psycopg2.connect(
+            os.getenv('POSTGRES_URL_NON_POOLING'),
+            sslmode='require'
+        )
+    except Exception as e:
+        logger.error(f"Database connection failed: {str(e)}")
+        raise
+
 def init_gemini():
     """Initialize Gemini client"""
     logger.debug('Initializing Gemini client')
     try:
-        client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not found in environment variables")
+        client = genai.Client(api_key=api_key)
         logger.info('Gemini client initialized successfully')
         return client
     except Exception as e:
@@ -295,6 +316,96 @@ def format_json_to_markdown(json_data):
     
     return markdown
 
+def store_syllabus_in_db(json_data):
+    """Store generated syllabus in database"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Insert course data
+        cur.execute("""
+            INSERT INTO courses (title, description, structure)
+            VALUES (%s, %s, %s)
+            RETURNING id
+        """, (
+            json_data['title'],
+            json_data['courseDescription'],
+            Json(json_data['courseStructure'])
+        ))
+        
+        course_id = cur.fetchone()[0]
+        
+        # Insert weekly topics
+        for week in json_data['weeklyTopics']:
+            cur.execute("""
+                INSERT INTO weekly_topics (course_id, week_number, main_topic, description, content)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
+            """, (
+                course_id,
+                week['week'],
+                week['mainTopic'],
+                week['description'],
+                Json(week)
+            ))
+            
+            weekly_topic_id = cur.fetchone()[0]
+            
+            # Store activities
+            for activity in week['activities']:
+                cur.execute("""
+                    INSERT INTO activities (weekly_topic_id, title, description, duration, type)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    activity['title'],
+                    activity['description'],
+                    activity['duration'],
+                    activity.get('type', 'in-class')
+                ))
+            
+            # Store assignments
+            for assignment in week['assignments']:
+                cur.execute("""
+                    INSERT INTO assignments (weekly_topic_id, title, description, due_date, weightage)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    assignment['title'],
+                    assignment['description'],
+                    assignment['dueDate'],
+                    assignment['weightage']
+                ))
+            
+            # Store quiz
+            if week.get('quiz'):
+                cur.execute("""
+                    INSERT INTO quizzes (weekly_topic_id, title, format, duration, num_questions, total_points)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    week['quiz']['title'],
+                    week['quiz']['format'],
+                    week['quiz']['duration'],
+                    week['quiz']['numQuestions'],
+                    week['quiz']['totalPoints']
+                ))
+        
+        conn.commit()
+        logger.info(f"Successfully stored course with ID: {course_id}")
+        return course_id
+        
+    except Exception as e:
+        logger.error(f"Database storage failed: {str(e)}")
+        if 'conn' in locals():
+            conn.rollback()
+        raise
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
+
 def generate_response(prompt_data):
     """Generate response using Gemini with Google Search integration"""
     logger.info(f'Generating syllabus for topic: "{prompt_data["topic"][:50]}..."')
@@ -368,6 +479,16 @@ def generate_response(prompt_data):
             formatted_text = result
         
         metadata = extract_search_metadata(response.candidates[0])
+        
+        if 'json_data' in locals() and validate_json_structure(json_data):
+            # Store in database
+            course_id = store_syllabus_in_db(json_data)
+            return {
+                "text": formatted_text,
+                "metadata": metadata,
+                "raw_json": json_data,
+                "course_id": course_id
+            }
         
         return {
             "text": formatted_text,
