@@ -1,7 +1,39 @@
+import os
 from flask import Flask, render_template
-from config import config
+from dotenv import load_dotenv
+import logging
+from logging.config import dictConfig
+
+# Configure logging before app creation
+dictConfig({
+    'version': 1,
+    'formatters': {
+        'default': {
+            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+        }
+    },
+    'handlers': {
+        'wsgi': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',
+            'formatter': 'default'
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'app.log',
+            'formatter': 'default'
+        }
+    },
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi', 'file']
+    }
+})
 
 def create_app(config_name='default'):
+    # Load environment variables
+    load_dotenv()
+    
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
