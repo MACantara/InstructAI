@@ -1,3 +1,9 @@
 Flask
 google-genai
 python-dotenv
+psycopg2-binary
+logging
+markupsafe
+requests
+gunicorn
+python-json-logger
