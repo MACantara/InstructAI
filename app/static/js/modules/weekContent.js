@@ -301,7 +301,7 @@ export const openWeekContent = (weekNumber, topic, content) => {
     }
 };
 
-export const generateAllWeeklyContent = async (weeks, updateUI) => {
+export const generateAllWeeklyContent = async (weeks, courseId, updateUI) => {
     let completedCount = 0;
     
     for (const week of weeks) {
@@ -309,7 +309,10 @@ export const generateAllWeeklyContent = async (weeks, updateUI) => {
             const contentResponse = await fetch('/generate/week-content', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ weekData: week })
+                body: JSON.stringify({ 
+                    weekData: week,
+                    courseId: courseId  // Add courseId to request
+                })
             });
             
             const data = await contentResponse.json();

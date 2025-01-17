@@ -40,6 +40,11 @@ def generate_week_content():
             return jsonify({'error': 'No week data provided'}), 400
 
         week_data = data['weekData']
+        course_id = data.get('courseId')  # Get course_id from request
+
+        if not course_id:
+            return jsonify({'error': 'Course ID is required'}), 400
+
         if not isinstance(week_data, dict):
             return jsonify({'error': 'Invalid week data format'}), 400
 
@@ -48,7 +53,8 @@ def generate_week_content():
         # Generate detailed content for the week
         content = generate_weekly_content(
             topic=week_data.get('mainTopic', ''),
-            week_data=week_data
+            week_data=week_data,
+            course_id=course_id  # Pass course_id to the function
         )
         
         if content is None:
