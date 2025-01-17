@@ -286,71 +286,73 @@ const renderExercises = (exercises) => {
     `;
 };
 
-export const openWeekContent = async (weekNumber, weeklyTopicId, courseId) => {
+export const openWeekContent = async (weekNum, weeklyTopicId, courseId) => {
+    if (!weeklyTopicId) {
+        console.error('Weekly topic ID is missing');
+        return;
+    }
+
     try {
-        // Validate IDs before making request
-        if (!weeklyTopicId || weeklyTopicId === 'undefined') {
-            throw new Error('Invalid weekly topic ID');
-        }
-
-        if (!courseId || courseId === 'undefined') {
-            throw new Error('Invalid course ID');
-        }
-
-        // Fetch content from API
+        // First verify content exists
         const response = await fetch(`/api/week-content/${weeklyTopicId}`);
         const data = await response.json();
         
         if (data.error) {
             throw new Error(data.error);
         }
-
-        // Open content in new window with IDs
-        const params = new URLSearchParams({
-            id: weeklyTopicId,
-            course_id: courseId
-        });
         
-        window.open(
-            `/week-content/${weekNumber}?${params}`,
-            `week${weekNumber}`,
-            'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no'
-        );
+        // Open content in new window/tab
+        const url = `/week-content/${weekNum}?id=${weeklyTopicId}&course_id=${courseId}`;
+        window.open(url, '_blank');
+        
     } catch (error) {
-        console.error('Error opening week content:', error);
-        alert(`Failed to open week content: ${error.message}`);
+        console.error('Failed to open week content:', error);
+        alert('Failed to open week content: ' + error.message);
     }
 };
 
 export const generateAllWeeklyContent = async (weeks, courseId, updateUI) => {
+    if (!weeks?.length || !courseId) {
+        console.error('Missing required data for bulk generation');
+        return;
+    }
+
+    const totalWeeks = weeks.length;
     let completedCount = 0;
-    
-    for (const week of weeks) {
+
+    for (const weekData of weeks) {
         try {
-            const contentResponse = await fetch('/generate/week-content', {
+            const response = await fetch('/generate/week-content', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    weekData: week,
-                    courseId: courseId
-                })
+                body: JSON.stringify({ weekData, courseId })
             });
             
-            const data = await contentResponse.json();
-            if (data.error) throw new Error(data.error);
+            const data = await response.json();
             
-            // Pass weekly_topic_id instead of full content
-            updateUI(
-                week.week, 
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            completedCount++;
+            updateUI?.(
+                weekData.week, 
                 data.weekly_topic_id, 
-                courseId,
-                ++completedCount, 
-                weeks.length
+                courseId, 
+                completedCount, 
+                totalWeeks
             );
             
         } catch (error) {
-            console.error(`Error generating content for week ${week.week}:`, error);
-            updateUI(week.week, null, null, completedCount, weeks.length, error);
+            console.error(`Error generating content for week ${weekData.week}:`, error);
+            updateUI?.(
+                weekData.week, 
+                null, 
+                courseId, 
+                completedCount, 
+                totalWeeks, 
+                error
+            );
         }
     }
 };
