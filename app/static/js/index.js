@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     configureMarkdown();
 
-    const updateWeekContentUI = (weekNum, topic, content, completedCount, totalCount, error = null) => {
+    const updateWeekContentUI = (weekNum, weeklyTopicId, courseId, completedCount, totalCount, error = null) => {
         const weekContainer = document.querySelector(`div.week-block:nth-child(${weekNum}) .week-content`);
         const generateAllBtn = document.getElementById('generateAllContent');
 
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const viewButton = document.createElement('button');
             viewButton.className = 'btn btn-primary d-inline-flex align-items-center gap-2';
             viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
-            viewButton.onclick = () => openWeekContent(weekNum, topic, content);
+            viewButton.onclick = () => openWeekContent(weekNum, weeklyTopicId, courseId);
             weekContainer.innerHTML = '';
             weekContainer.appendChild(viewButton);
         }
@@ -159,11 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await contentResponse.json();
                 if (data.error) throw new Error(data.error);
                 
-                // Replace button with view button
+                // Replace button with view button using IDs
                 const viewButton = document.createElement('button');
                 viewButton.className = 'btn btn-primary d-inline-flex align-items-center gap-2';
                 viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
-                viewButton.onclick = () => openWeekContent(weekNum, weekData.mainTopic, data.content);
+                viewButton.onclick = () => openWeekContent(weekNum, data.weekly_topic_id, window.courseId);
                 
                 btn.replaceWith(viewButton);
             } catch (error) {
