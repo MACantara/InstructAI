@@ -106,10 +106,19 @@ def view_week_content(week_number):
         current_app.logger.error(f'Error displaying week content: {str(e)}')
         return jsonify({'error': 'Failed to display content'}), 500
 
-@main_bp.route('/api/week-content/<int:weekly_topic_id>')
+@main_bp.route('/api/week-content/<weekly_topic_id>')
 def get_week_content(weekly_topic_id):
     """API endpoint to fetch week content by ID"""
     try:
+        # Handle undefined or invalid ID
+        if weekly_topic_id == 'undefined' or not weekly_topic_id:
+            return jsonify({'error': 'Invalid weekly topic ID'}), 400
+            
+        try:
+            weekly_topic_id = int(weekly_topic_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Weekly topic ID must be a number'}), 400
+
         content = retrieve_weekly_content(weekly_topic_id)
         if not content:
             return jsonify({'error': 'Content not found'}), 404
