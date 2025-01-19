@@ -1,18 +1,168 @@
 {% extends "base.html" %}
 
-{% block title %}Week {{ week_number }} - {{ topic }}{% endblock %}
-
 {% block content %}
-<div class="container py-4">
-    <div class="card shadow">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h1 class="h3 mb-0">Week {{ week_number }}: {{ topic }}</h1>
-            <button onclick="window.close();" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-times"></i> Close
-            </button>
+<div class="container-fluid py-4"></div>
+    <div class="row g-4">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h1 class="display-6">Week {{ week_number }}: {{ main_topic }}</h1>
+                    <p class="lead text-secondary">{{ description }}</p>
+                </div>
+            </div>
+
+            <!-- Lecture Content -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary bg-opacity-10">
+                    <h2 class="h4 mb-0">Lecture Notes</h2>
+                </div>
+                <div class="card-body prose">
+                    {{ content.lecture.notes | markdown | safe }}
+                </div>
+            </div>
+
+            <!-- Examples -->
+            {% if content.lecture.examples %}
+            <div class="card mb-4">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h2 class="h4 mb-0">Examples</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for example in content.lecture.examples %}
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    {{ example | markdown | safe }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Practice Exercises -->
+            {% if content.exercises %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="h4 mb-0">Practice Exercises</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for exercise in content.exercises %}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-{{ 'success' if exercise.difficulty == 'beginner' else 'warning' if exercise.difficulty == 'intermediate' else 'danger' }} border-opacity-50">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h3 class="h6 mb-0">{{ exercise.title }}</h3>
+                                    <span class="badge bg-{{ 'success' if exercise.difficulty == 'beginner' else 'warning' if exercise.difficulty == 'intermediate' else 'danger' }}">
+                                        {{ exercise.difficulty | title }}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-secondary mb-3">{{ exercise.description }}</p>
+                                    <ol class="list-group list-group-numbered">
+                                        {% for instruction in exercise.instructions %}
+                                        <li class="list-group-item">{{ instruction }}</li>
+                                        {% endfor %}
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        <div class="card-body">
-            {{ content|safe }}
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 2rem;">
+                <!-- Key Points -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary bg-opacity-10">
+                        <h2 class="h5 mb-0">Key Points</h2>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for slide in content.lecture.slides %}
+                        <div class="list-group-item">
+                            <div class="d-flex">
+                                <span class="badge bg-primary rounded-pill me-2">{{ loop.index }}</span>
+                                {{ slide }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Resources -->
+                {% if content.resources %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Learning Resources</h2>
+                    </div>
+                    <div class="accordion" id="resourcesAccordion">
+                        {% if content.resources.videos %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#videosCollapse">
+                                    <i class="fas fa-video me-2"></i> Videos
+                                </button>
+                            </h2>
+                            <div id="videosCollapse" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    <div class="list-group list-group-flush">
+                                        {% for video in content.resources.videos %}
+                                        <a href="{{ video.url }}" class="list-group-item list-group-item-action" target="_blank" rel="noopener">
+                                            <h6 class="mb-1">{{ video.title }}</h6>
+                                            <p class="mb-0 small text-secondary">{{ video.description }}</p>
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Similar sections for articles and tools... -->
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Quiz -->
+                {% if content.quiz %}
+                <div class="card">
+                    <div class="card-header bg-info bg-opacity-10">
+                        <h2 class="h5 mb-0">{{ content.quiz.title }}</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-clock text-info me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Duration</small>
+                                        <strong>{{ content.quiz.duration }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-tasks text-info me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Format</small>
+                                        <strong>{{ content.quiz.format }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
