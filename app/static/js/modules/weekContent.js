@@ -122,29 +122,52 @@ const renderWeeklyHeader = (weekNum, topic, description) => `
 const renderLecture = (lecture) => {
     if (!lecture?.notes) return '';
     
-    const parsedNotes = marked.parse(lecture.notes);
-    
     return `
         <div class="card mb-4">
             <div class="card-header bg-primary bg-opacity-10">
                 <h2 class="h5 mb-0">Lecture Content</h2>
             </div>
-            <div class="card-body prose">
-                ${parsedNotes}
-            </div>
-            ${lecture.slides?.length ? `
-                <div class="card-footer bg-light">
-                    <h3 class="h6 mb-3">Lecture Slides</h3>
-                    <div class="list-group list-group-flush">
-                        ${lecture.slides.map(slide => `
-                            <div class="list-group-item">
-                                <i class="fas fa-file-powerpoint text-primary me-2"></i>
-                                ${slide}
-                            </div>
-                        `).join('')}
-                    </div>
+            <div class="card-body">
+                <div class="lecture-content prose">
+                    ${marked.parse(lecture.notes)}
                 </div>
-            ` : ''}
+                
+                ${lecture.slides?.length ? `
+                    <div class="mt-4">
+                        <h3 class="h6 mb-3">Key Points</h3>
+                        <div class="list-group">
+                            ${lecture.slides.map((slide, index) => `
+                                <div class="list-group-item">
+                                    <div class="d-flex align-items-start">
+                                        <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
+                                        <div>${marked.parse(slide)}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${lecture.examples?.length ? `
+                    <div class="mt-4">
+                        <h3 class="h6 mb-3">Examples</h3>
+                        <div class="row g-3">
+                            ${lecture.examples.map((example, index) => `
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-info border-opacity-25">
+                                        <div class="card-header bg-info bg-opacity-10">
+                                            <h4 class="h6 mb-0">Example ${index + 1}</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            ${marked.parse(example)}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
         </div>
     `;
 };
@@ -189,23 +212,29 @@ export const renderWeeklyContent = (weekContent) => {
     
     return `
         <div class="container-fluid py-4">
-            ${renderWeeklyHeader(
-                weekContent.week_number,
-                weekContent.main_topic,
-                weekContent.description
-            )}
-            
-            ${renderTopicsOverview(weekContent.topics)}
-            
             <div class="row g-4">
+                <!-- Main Content Column -->
                 <div class="col-lg-8">
+                    ${renderWeeklyHeader(
+                        weekContent.week_number,
+                        weekContent.main_topic,
+                        weekContent.description
+                    )}
+                    
+                    ${renderTopicsOverview(weekContent.topics)}
                     ${renderLecture(weekContent.content.lecture)}
                     ${renderExercises(weekContent.content.exercises)}
                 </div>
+                
+                <!-- Sidebar Column -->
                 <div class="col-lg-4">
-                    ${renderResources(weekContent.content.resources)}
-                    ${renderWeeklyActivities(weekContent.content.activities)}
-                    ${renderWeeklyQuiz(weekContent.content.quiz)}
+                    <div class="sticky-top" style="top: 2rem;">
+                        <div class="d-flex flex-column gap-4">
+                            ${renderResources(weekContent.content.resources)}
+                            ${renderWeeklyActivities(weekContent.content.activities)}
+                            ${renderWeeklyQuiz(weekContent.content.quiz)}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -213,52 +242,66 @@ export const renderWeeklyContent = (weekContent) => {
 };
 
 const renderResources = (resources) => {
+    if (!resources) return '';
+    
     return `
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h4 class="mb-0">Learning Resources</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row g-4">
-                        ${resources.videos.length > 0 ? `
-                            <div class="col-md-4">
-                                <div class="card h-100 border-primary border-opacity-25">
-                                    <div class="card-header bg-primary bg-opacity-10">
-                                        <h5 class="h6 mb-0">
-                                            <i class="fas fa-video me-2"></i>Video Resources
-                                        </h5>
-                                    </div>
-                                    ${renderResourceList(resources.videos, 'video')}
-                                </div>
+        <div class="card">
+            <div class="card-header bg-light">
+                <h3 class="h5 mb-0">Learning Resources</h3>
+            </div>
+            <div class="accordion" id="resourcesAccordion">
+                ${resources.videos?.length ? `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#videosCollapse">
+                                <i class="fas fa-video me-2"></i> Videos
+                            </button>
+                        </h2>
+                        <div id="videosCollapse" class="accordion-collapse collapse show" data-bs-parent="#resourcesAccordion">
+                            <div class="accordion-body">
+                                ${renderResourceList(resources.videos, 'video')}
                             </div>
-                        ` : ''}
-                        ${resources.articles.length > 0 ? `
-                            <div class="col-md-4">
-                                <div class="card h-100 border-info border-opacity-25">
-                                    <div class="card-header bg-info bg-opacity-10">
-                                        <h5 class="h6 mb-0">
-                                            <i class="fas fa-book me-2"></i>Reading Materials
-                                        </h5>
-                                    </div>
-                                    ${renderResourceList(resources.articles, 'article')}
-                                </div>
-                            </div>
-                        ` : ''}
-                        ${resources.tools.length > 0 ? `
-                            <div class="col-md-4">
-                                <div class="card h-100 border-success border-opacity-25">
-                                    <div class="card-header bg-success bg-opacity-10">
-                                        <h5 class="h6 mb-0">
-                                            <i class="fas fa-tools me-2"></i>Tools & Software
-                                        </h5>
-                                    </div>
-                                    ${renderResourceList(resources.tools, 'tool')}
-                                </div>
-                            </div>
-                        ` : ''}
+                        </div>
                     </div>
-                </div>
+                ` : ''}
+                
+                ${resources.articles?.length ? `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button ${!resources.videos?.length ? '' : 'collapsed'}" 
+                                    type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#articlesCollapse">
+                                <i class="fas fa-book me-2"></i> Articles
+                            </button>
+                        </h2>
+                        <div id="articlesCollapse" 
+                             class="accordion-collapse collapse ${!resources.videos?.length ? 'show' : ''}" 
+                             data-bs-parent="#resourcesAccordion">
+                            <div class="accordion-body">
+                                ${renderResourceList(resources.articles, 'article')}
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${resources.tools?.length ? `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" 
+                                    type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#toolsCollapse">
+                                <i class="fas fa-tools me-2"></i> Tools
+                            </button>
+                        </h2>
+                        <div id="toolsCollapse" 
+                             class="accordion-collapse collapse" 
+                             data-bs-parent="#resourcesAccordion">
+                            <div class="accordion-body">
+                                ${renderResourceList(resources.tools, 'tool')}
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
             </div>
         </div>
     `;
