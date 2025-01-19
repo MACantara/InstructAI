@@ -33,4 +33,28 @@
 .exercise-item.difficulty-intermediate { border-left-color: var(--bs-warning); }
 .exercise-item.difficulty-advanced { border-left-color: var(--bs-danger); }
 
-/* Maintain any other custom styles that Bootstrap doesn't cover */
+.prose {
+    font-size: 1.1rem;
+    line-height: 1.7;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+}
+
+.prose p {
+    margin-bottom: 1.25em;
+}
+
+.prose code {
+    background-color: rgba(0,0,0,0.05);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+}
+
+.example-content {
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
