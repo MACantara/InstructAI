@@ -1,4 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
+from markupsafe import Markup
+import markdown2
 import traceback
 from .utils.ai_helper import generate_response
 from .utils.content_generator import generate_weekly_content, retrieve_weekly_content
@@ -94,28 +96,30 @@ def view_week_content(week_number):
         if not weekly_topic_id:
             return jsonify({'error': 'Weekly topic ID is required'}), 400
             
-        # Retrieve content from database
         content = retrieve_weekly_content(weekly_topic_id)
         if not content:
             return jsonify({'error': 'Content not found'}), 404
             
-        # Structure the data for the template
-        structured_data = {
-            'week_number': week_number,
-            'topic': content.get('topic', ''),
-            'main_topic': content.get('mainTopic', ''),
-            'description': content.get('description', ''),
-            'topics': content.get('topics', []),
-            'content': {
-                'lecture': content.get('content', {}).get('lecture', {}),
-                'resources': content.get('content', {}).get('resources', {}),
-                'exercises': content.get('content', {}).get('exercises', []),
-                'activities': content.get('content', {}).get('activities', []),
-                'quiz': content.get('content', {}).get('quiz', {})
-            }
-        }
+        # Add markdown filter to template context
+        def markdown_filter(text):
+            if not text:
+                return Markup('')
+            return Markup(markdown2.markdown(
+                text, 
+                extras=['fenced-code-blocks', 'tables', 'break-on-newline']
+            ))
             
-        return render_template('week_content.html', **structured_data)
+        # Register filter with template engine
+        current_app.jinja_env.filters['markdown'] = markdown_filter
+            
+        return render_template(
+            'week_content.html',
+            week_number=week_number,
+            main_topic=content.get('topic', ''),
+            description=content.get('description', ''),
+            content=content.get('content', {}),
+            topics=content.get('topics', [])
+        )
         
     except Exception as e:
         current_app.logger.error(f'Error displaying week content: {str(e)}')
