@@ -99,10 +99,24 @@ def view_week_content(week_number):
         if not content:
             return jsonify({'error': 'Content not found'}), 404
             
-        return render_template('week_content.html', 
-                             week_number=week_number,
-                             topic=content.get('topic', ''),
-                             content=content)
+        # Structure the data for the template
+        structured_data = {
+            'week_number': week_number,
+            'topic': content.get('topic', ''),
+            'main_topic': content.get('mainTopic', ''),
+            'description': content.get('description', ''),
+            'topics': content.get('topics', []),
+            'content': {
+                'lecture': content.get('content', {}).get('lecture', {}),
+                'resources': content.get('content', {}).get('resources', {}),
+                'exercises': content.get('content', {}).get('exercises', []),
+                'activities': content.get('content', {}).get('activities', []),
+                'quiz': content.get('content', {}).get('quiz', {})
+            }
+        }
+            
+        return render_template('week_content.html', **structured_data)
+        
     except Exception as e:
         current_app.logger.error(f'Error displaying week content: {str(e)}')
         return jsonify({'error': 'Failed to display content'}), 500
