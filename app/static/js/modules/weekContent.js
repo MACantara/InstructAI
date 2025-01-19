@@ -110,56 +110,103 @@ const formatExamples = (examples) => {
 
 const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
 
+const renderWeeklyHeader = (weekNum, topic, description) => `
+    <div class="card mb-4">
+        <div class="card-body">
+            <h1 class="display-6">Week ${weekNum}: ${topic}</h1>
+            <p class="lead text-secondary">${description}</p>
+        </div>
+    </div>
+`;
+
+const renderLecture = (lecture) => {
+    if (!lecture?.notes) return '';
+    
+    const parsedNotes = marked.parse(lecture.notes);
+    
+    return `
+        <div class="card mb-4">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h2 class="h5 mb-0">Lecture Content</h2>
+            </div>
+            <div class="card-body prose">
+                ${parsedNotes}
+            </div>
+            ${lecture.slides?.length ? `
+                <div class="card-footer bg-light">
+                    <h3 class="h6 mb-3">Lecture Slides</h3>
+                    <div class="list-group list-group-flush">
+                        ${lecture.slides.map(slide => `
+                            <div class="list-group-item">
+                                <i class="fas fa-file-powerpoint text-primary me-2"></i>
+                                ${slide}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+};
+
+const renderTopicsOverview = (topics) => {
+    if (!topics?.length) return '';
+    
+    return `
+        <div class="card mb-4">
+            <div class="card-header bg-info bg-opacity-10">
+                <h2 class="h5 mb-0">Topics Overview</h2>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    ${topics.map((topic, index) => `
+                        <div class="col-md-4">
+                            <div class="card h-100 border-info border-opacity-25">
+                                <div class="card-header bg-info bg-opacity-10">
+                                    <h3 class="h6 mb-0">${topic.subtitle}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        ${topic.points.map(point => `
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-info me-2"></i>
+                                                ${point}
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+};
+
 export const renderWeeklyContent = (weekContent) => {
     if (!weekContent) return '<div class="alert alert-danger">No content available</div>';
     
-    // Validate content structure
-    if (!weekContent.content || !weekContent.content.lecture) {
-        console.error('Invalid content structure:', weekContent);
-        return '<div class="error-message">Invalid content structure</div>';
-    }
-    
-    // Ensure arrays exist
-    const lecture = weekContent.content.lecture;
-    const resources = weekContent.content.resources || {};
-    const exercises = ensureArray(weekContent.content.exercises);
-    
     return `
-        <div class="container-fluid p-0">
+        <div class="container-fluid py-4">
+            ${renderWeeklyHeader(
+                weekContent.week_number,
+                weekContent.main_topic,
+                weekContent.description
+            )}
+            
+            ${renderTopicsOverview(weekContent.topics)}
+            
             <div class="row g-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="mb-0">Lecture Materials</h4>
-                        </div>
-                        <div class="card-body prose">
-                            ${safeMarkdownParse(lecture.notes)}
-                            
-                            <div class="mt-4">
-                                <h5>Key Points</h5>
-                                <ul class="list-group">
-                                    ${lecture.slides.map(slide => `
-                                        <li class="list-group-item">${slide}</li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-
-                            ${lecture.examples.length > 0 ? `
-                                <div class="mt-4">
-                                    <h5>Examples</h5>
-                                    <div class="bg-light p-3 rounded">
-                                        <pre class="mb-0"><code>${lecture.examples.join('\n\n')}</code></pre>
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
+                <div class="col-lg-8">
+                    ${renderLecture(weekContent.content.lecture)}
+                    ${renderExercises(weekContent.content.exercises)}
                 </div>
-
-                ${weekContent.content.activities ? renderWeeklyActivities(weekContent.content.activities) : ''}
-                ${renderResources(weekContent.content.resources || {})}
-                ${weekContent.content.quiz ? renderWeeklyQuiz(weekContent.content.quiz) : ''}
-                ${renderExercises(weekContent.content.exercises || [])}
+                <div class="col-lg-4">
+                    ${renderResources(weekContent.content.resources)}
+                    ${renderWeeklyActivities(weekContent.content.activities)}
+                    ${renderWeeklyQuiz(weekContent.content.quiz)}
+                </div>
             </div>
         </div>
     `;
