@@ -7,3 +7,5 @@ requests
 gunicorn
 python-json-logger
 Werkzeug
+markdown2
+markupsafe
