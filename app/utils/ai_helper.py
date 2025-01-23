@@ -1,5 +1,5 @@
 from google import genai
-from google.genai.types import Tool, GenerateContentConfig, GoogleSearch, Part
+from google.genai.types import GenerateContentConfig, Part
 from flask import current_app
 import logging
 import json
@@ -40,29 +40,6 @@ def init_gemini():
     except Exception as e:
         logger.error(f'Failed to initialize Gemini client: {str(e)}')
         raise
-
-def extract_search_metadata(response_candidate):
-    """Extract and structure search metadata from response"""
-    metadata = {}
-    
-    if hasattr(response_candidate, 'grounding_metadata'):
-        meta = response_candidate.grounding_metadata
-        
-        # Extract grounding chunks focusing on web title and URI
-        if meta.grounding_chunks:
-            metadata['chunks'] = []
-            logger.debug('Grounding chunks found:')
-            for chunk in meta.grounding_chunks:
-                chunk_data = chunk.model_dump()
-                if 'web' in chunk_data:
-                    web_data = {
-                        'title': chunk_data['web'].get('title', 'Unknown title'),
-                        'source': chunk_data['web'].get('uri', 'Unknown source')
-                    }
-                    metadata['chunks'].append(web_data)
-                    logger.debug(f"Source: {web_data['title']} - {web_data['source']}")
-    
-    return metadata
 
 def generate_syllabus_prompt(topic, include_objectives=True, include_readings=True):
     """Generate a structured prompt for syllabus creation"""
@@ -407,7 +384,7 @@ def store_syllabus_in_db(json_data):
             conn.close()
 
 def generate_response(prompt_data):
-    """Generate response using Gemini with Google Search integration"""
+    """Generate response using Gemini"""
     logger.info(f'Generating syllabus for topic: "{prompt_data["topic"][:50]}..."')
     
     try:
@@ -422,19 +399,12 @@ def generate_response(prompt_data):
         
         model_id = "gemini-2.0-flash-exp"
         
-        logger.debug('Initializing Google Search tool')
-        google_search_tool = Tool(
-            google_search=GoogleSearch()
-        )
-        
         logger.debug('Configuring generation parameters')
         config = GenerateContentConfig(
             temperature=1,
             top_p=0.95,
             top_k=40,
             candidate_count=1,
-            tools=[google_search_tool],
-            response_modalities=["TEXT"],
             max_output_tokens=8192,
             stop_sequences=["STOP!"],
             presence_penalty=0.0,
@@ -450,13 +420,12 @@ def generate_response(prompt_data):
         
         if not response or not response.candidates:
             logger.warning('No response generated from API')
-            return {"text": "No response generated", "metadata": {}}
+            return {"text": "No response generated"}
         
         result = response.candidates[0].content.parts[0].text
         
         try:
             # Clean the response to ensure it's valid JSON
-            # Remove any leading/trailing non-JSON content
             json_str = result.strip()
             if not json_str.startswith('{'):
                 json_str = json_str[json_str.find('{'):]
@@ -478,21 +447,17 @@ def generate_response(prompt_data):
             logger.warning(f'JSON parsing failed: {str(e)}, using raw text')
             formatted_text = result
         
-        metadata = extract_search_metadata(response.candidates[0])
-        
         if 'json_data' in locals() and validate_json_structure(json_data):
             # Store in database
             course_id = store_syllabus_in_db(json_data)
             return {
                 "text": formatted_text,
-                "metadata": metadata,
                 "raw_json": json_data,
                 "course_id": course_id
             }
         
         return {
             "text": formatted_text,
-            "metadata": metadata,
             "raw_json": json_data if 'json_data' in locals() else None
         }
         
