@@ -190,45 +190,65 @@ def validate_json_structure(json_data):
     required_fields = ['title', 'courseDescription', 'courseStructure', 'weeklyTopics']
     course_structure_fields = ['duration', 'format', 'assessment']
     weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments', 'quiz']
+    quiz_fields = ['title', 'duration', 'totalPoints', 'numQuestions', 'format']
 
-    # Check required top-level fields
-    if not all(field in json_data for field in required_fields):
-        return False
-
-    # Validate course structure
-    if not all(field in json_data['courseStructure'] for field in course_structure_fields):
-        return False
-
-    # Validate weekly topics
-    if not isinstance(json_data['weeklyTopics'], list) or not json_data['weeklyTopics']:
-        return False
-
-    for week in json_data['weeklyTopics']:
-        if not all(field in week for field in weekly_topic_fields):
+    try:
+        # Check required top-level fields
+        if not all(field in json_data for field in required_fields):
+            logger.error(f"Missing required fields: {[f for f in required_fields if f not in json_data]}")
             return False
 
-        # Strictly validate topic structure
-        if not isinstance(week['topics'], list) or len(week['topics']) != 3:
-            logger.error(f"Week {week.get('week')} does not have exactly 3 topics")
+        # Validate course structure
+        if not all(field in json_data['courseStructure'] for field in course_structure_fields):
+            logger.error(f"Missing course structure fields: {[f for f in course_structure_fields if f not in json_data['courseStructure']]}")
             return False
 
-        for topic in week['topics']:
-            if not all(field in topic for field in ['subtitle', 'points']):
-                return False
-            # Strictly validate points
-            if not isinstance(topic['points'], list) or len(topic['points']) < 3:
-                logger.error(f"Topic '{topic.get('subtitle')}' does not have minimum 3 points")
-                return False
-
-        if not isinstance(week['activities'], list) or not isinstance(week['assignments'], list):
+        # Validate weekly topics
+        if not isinstance(json_data['weeklyTopics'], list) or not json_data['weeklyTopics']:
+            logger.error("weeklyTopics must be a non-empty list")
             return False
 
-        if 'quiz' in week:
-            quiz_fields = ['title', 'duration', 'totalPoints', 'numQuestions', 'format']
-            if not all(field in week['quiz'] for field in quiz_fields):
+        for week in json_data['weeklyTopics']:
+            # Check required week fields
+            if not all(field in week for field in weekly_topic_fields):
+                logger.error(f"Week {week.get('week', 'unknown')}: Missing required fields")
                 return False
 
-    return True
+            # Strictly validate topic structure
+            if not isinstance(week['topics'], list) or len(week['topics']) != 3:
+                logger.error(f"Week {week.get('week')}: Must have exactly 3 topics")
+                return False
+
+            # Validate topics
+            for topic in week['topics']:
+                if not all(field in topic for field in ['subtitle', 'points']):
+                    logger.error(f"Week {week.get('week')}: Topic missing required fields")
+                    return False
+                if not isinstance(topic['points'], list) or len(topic['points']) < 3:
+                    logger.error(f"Topic '{topic.get('subtitle')}' must have at least 3 points")
+                    return False
+
+            # Validate activities and assignments
+            if not isinstance(week.get('activities', []), list) or not isinstance(week.get('assignments', []), list):
+                logger.error(f"Week {week.get('week')}: activities and assignments must be lists")
+                return False
+
+            # Validate quiz structure if present
+            quiz = week.get('quiz')
+            if quiz is not None:  # Only validate if quiz exists
+                if not isinstance(quiz, dict):
+                    logger.error(f"Week {week.get('week')}: quiz must be an object")
+                    return False
+                missing_quiz_fields = [field for field in quiz_fields if field not in quiz]
+                if missing_quiz_fields:
+                    logger.error(f"Week {week.get('week')}: Quiz missing fields: {missing_quiz_fields}")
+                    return False
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Validation error: {str(e)}")
+        return False
 
 def format_json_to_markdown(json_data):
     """Convert JSON structure to formatted Markdown"""
