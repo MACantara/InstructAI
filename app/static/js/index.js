@@ -1,4 +1,4 @@
-import { renderMetadata, configureMarkdown } from './modules/renderer.js';
+import { configureMarkdown } from './modules/renderer.js';
 import { renderSyllabus } from './modules/syllabus.js';
 import { openWeekContent, generateAllWeeklyContent } from './modules/weekContent.js';
 
@@ -82,14 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
             
-            // Update response area with structured syllabus and sources
+            // Update response area with structured syllabus
             elements.responseArea.innerHTML = `
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <div class="syllabus-content prose">
                             ${renderSyllabus(data.response)}
                         </div>
-                        ${renderMetadata(data.response.metadata)}
                     </div>
                 </div>`;
 
