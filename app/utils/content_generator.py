@@ -359,7 +359,7 @@ Use this exact JSON structure, ensuring all content aligns with the provided top
     "topic": "{week_data['mainTopic']}",
     "content": {{
         "lecture": {{
-            "notes": "# {week_data['mainTopic']}\\n\\n[Structured content following the exact topic outline above]",
+            "notes": "{week_data['mainTopic']}[Structured content following the exact topic outline above]",
             "slides": [
                 "One slide per major section, following the given structure",
                 "Must cover all specified points in order"
