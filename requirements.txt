@@ -1,3 +1,11 @@
 Flask
 google-genai
 python-dotenv
+psycopg2-binary
+markupsafe
+requests
+gunicorn
+python-json-logger
+Werkzeug
+markdown2
+markupsafe

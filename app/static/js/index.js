@@ -1,4 +1,4 @@
-import { renderMetadata, configureMarkdown } from './modules/renderer.js';
+import { configureMarkdown } from './modules/renderer.js';
 import { renderSyllabus } from './modules/syllabus.js';
 import { openWeekContent, generateAllWeeklyContent } from './modules/weekContent.js';
 
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     configureMarkdown();
 
-    const updateWeekContentUI = (weekNum, topic, content, completedCount, totalCount, error = null) => {
+    const updateWeekContentUI = (weekNum, weeklyTopicId, courseId, completedCount, totalCount, error = null) => {
         const weekContainer = document.querySelector(`div.week-block:nth-child(${weekNum}) .week-content`);
         const generateAllBtn = document.getElementById('generateAllContent');
 
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const viewButton = document.createElement('button');
             viewButton.className = 'btn btn-primary d-inline-flex align-items-center gap-2';
             viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
-            viewButton.onclick = () => openWeekContent(weekNum, topic, content);
+            viewButton.onclick = () => openWeekContent(weekNum, weeklyTopicId, courseId);
             weekContainer.innerHTML = '';
             weekContainer.appendChild(viewButton);
         }
@@ -82,23 +82,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
             
-            // Update response area with structured syllabus and sources
+            // Update response area with structured syllabus
             elements.responseArea.innerHTML = `
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <div class="syllabus-content prose">
                             ${renderSyllabus(data.response)}
                         </div>
-                        ${renderMetadata(data.response.metadata)}
                     </div>
                 </div>`;
 
             // Show bulk actions after successful syllabus generation
             elements.bulkActions.classList.remove('d-none');
             
-            // Add event listener for bulk generation
+            if (data.response.course_id) {
+                // Store course_id globally for use in weekly content generation
+                window.courseId = data.response.course_id;
+            }
+
+            // Update bulk generation event listener to include courseId
             document.getElementById('generateAllContent').addEventListener('click', () => {
-                generateAllWeeklyContent(data.response.raw_json.weeklyTopics, updateWeekContentUI);
+                if (!window.courseId) {
+                    console.error('No course ID available');
+                    return;
+                }
+                generateAllWeeklyContent(
+                    data.response.raw_json.weeklyTopics, 
+                    window.courseId,  // Pass the stored courseId
+                    updateWeekContentUI
+                );
             });
             
             // Store syllabus data globally
@@ -124,6 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const weekNum = btn.dataset.week;
             const weekData = window.syllabusData.weeklyTopics.find(w => w.week == weekNum);
             
+            if (!window.courseId) {
+                console.error('No course ID available');
+                return;
+            }
+
             try {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generating...';
@@ -132,17 +149,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const contentResponse = await fetch('/generate/week-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ weekData })
+                    body: JSON.stringify({ 
+                        weekData,
+                        courseId: window.courseId  // Include courseId in request
+                    })
                 });
                 
                 const data = await contentResponse.json();
                 if (data.error) throw new Error(data.error);
                 
-                // Replace button with view button
+                // Replace button with view button using IDs
                 const viewButton = document.createElement('button');
                 viewButton.className = 'btn btn-primary d-inline-flex align-items-center gap-2';
                 viewButton.innerHTML = '<i class="fas fa-eye"></i> View Week Content';
-                viewButton.onclick = () => openWeekContent(weekNum, weekData.mainTopic, data.content);
+                viewButton.onclick = () => openWeekContent(weekNum, data.weekly_topic_id, window.courseId);
                 
                 btn.replaceWith(viewButton);
             } catch (error) {

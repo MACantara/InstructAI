@@ -1,47 +1,45 @@
 from google import genai
-from google.genai.types import Tool, GenerateContentConfig, GoogleSearch, Part
+from google.genai.types import GenerateContentConfig, Part
 from flask import current_app
 import logging
 import json
+import psycopg2
+from psycopg2.extras import Json
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Ensure debug logs are captured
 logger.propagate = False
 
+def get_db_connection():
+    """Get database connection using environment variables"""
+    try:
+        return psycopg2.connect(
+            os.getenv('POSTGRES_URL_NON_POOLING'),
+            sslmode='require'
+        )
+    except Exception as e:
+        logger.error(f"Database connection failed: {str(e)}")
+        raise
+
 def init_gemini():
     """Initialize Gemini client"""
     logger.debug('Initializing Gemini client')
     try:
-        client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not found in environment variables")
+        client = genai.Client(api_key=api_key)
         logger.info('Gemini client initialized successfully')
         return client
     except Exception as e:
         logger.error(f'Failed to initialize Gemini client: {str(e)}')
         raise
-
-def extract_search_metadata(response_candidate):
-    """Extract and structure search metadata from response"""
-    metadata = {}
-    
-    if hasattr(response_candidate, 'grounding_metadata'):
-        meta = response_candidate.grounding_metadata
-        
-        # Extract grounding chunks focusing on web title and URI
-        if meta.grounding_chunks:
-            metadata['chunks'] = []
-            logger.debug('Grounding chunks found:')
-            for chunk in meta.grounding_chunks:
-                chunk_data = chunk.model_dump()
-                if 'web' in chunk_data:
-                    web_data = {
-                        'title': chunk_data['web'].get('title', 'Unknown title'),
-                        'source': chunk_data['web'].get('uri', 'Unknown source')
-                    }
-                    metadata['chunks'].append(web_data)
-                    logger.debug(f"Source: {web_data['title']} - {web_data['source']}")
-    
-    return metadata
 
 def generate_syllabus_prompt(topic, include_objectives=True, include_readings=True):
     """Generate a structured prompt for syllabus creation"""
@@ -192,45 +190,65 @@ def validate_json_structure(json_data):
     required_fields = ['title', 'courseDescription', 'courseStructure', 'weeklyTopics']
     course_structure_fields = ['duration', 'format', 'assessment']
     weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments', 'quiz']
+    quiz_fields = ['title', 'duration', 'totalPoints', 'numQuestions', 'format']
 
-    # Check required top-level fields
-    if not all(field in json_data for field in required_fields):
-        return False
-
-    # Validate course structure
-    if not all(field in json_data['courseStructure'] for field in course_structure_fields):
-        return False
-
-    # Validate weekly topics
-    if not isinstance(json_data['weeklyTopics'], list) or not json_data['weeklyTopics']:
-        return False
-
-    for week in json_data['weeklyTopics']:
-        if not all(field in week for field in weekly_topic_fields):
+    try:
+        # Check required top-level fields
+        if not all(field in json_data for field in required_fields):
+            logger.error(f"Missing required fields: {[f for f in required_fields if f not in json_data]}")
             return False
 
-        # Strictly validate topic structure
-        if not isinstance(week['topics'], list) or len(week['topics']) != 3:
-            logger.error(f"Week {week.get('week')} does not have exactly 3 topics")
+        # Validate course structure
+        if not all(field in json_data['courseStructure'] for field in course_structure_fields):
+            logger.error(f"Missing course structure fields: {[f for f in course_structure_fields if f not in json_data['courseStructure']]}")
             return False
 
-        for topic in week['topics']:
-            if not all(field in topic for field in ['subtitle', 'points']):
-                return False
-            # Strictly validate points
-            if not isinstance(topic['points'], list) or len(topic['points']) < 3:
-                logger.error(f"Topic '{topic.get('subtitle')}' does not have minimum 3 points")
-                return False
-
-        if not isinstance(week['activities'], list) or not isinstance(week['assignments'], list):
+        # Validate weekly topics
+        if not isinstance(json_data['weeklyTopics'], list) or not json_data['weeklyTopics']:
+            logger.error("weeklyTopics must be a non-empty list")
             return False
 
-        if 'quiz' in week:
-            quiz_fields = ['title', 'duration', 'totalPoints', 'numQuestions', 'format']
-            if not all(field in week['quiz'] for field in quiz_fields):
+        for week in json_data['weeklyTopics']:
+            # Check required week fields
+            if not all(field in week for field in weekly_topic_fields):
+                logger.error(f"Week {week.get('week', 'unknown')}: Missing required fields")
                 return False
 
-    return True
+            # Strictly validate topic structure
+            if not isinstance(week['topics'], list) or len(week['topics']) != 3:
+                logger.error(f"Week {week.get('week')}: Must have exactly 3 topics")
+                return False
+
+            # Validate topics
+            for topic in week['topics']:
+                if not all(field in topic for field in ['subtitle', 'points']):
+                    logger.error(f"Week {week.get('week')}: Topic missing required fields")
+                    return False
+                if not isinstance(topic['points'], list) or len(topic['points']) < 3:
+                    logger.error(f"Topic '{topic.get('subtitle')}' must have at least 3 points")
+                    return False
+
+            # Validate activities and assignments
+            if not isinstance(week.get('activities', []), list) or not isinstance(week.get('assignments', []), list):
+                logger.error(f"Week {week.get('week')}: activities and assignments must be lists")
+                return False
+
+            # Validate quiz structure if present
+            quiz = week.get('quiz')
+            if quiz is not None:  # Only validate if quiz exists
+                if not isinstance(quiz, dict):
+                    logger.error(f"Week {week.get('week')}: quiz must be an object")
+                    return False
+                missing_quiz_fields = [field for field in quiz_fields if field not in quiz]
+                if missing_quiz_fields:
+                    logger.error(f"Week {week.get('week')}: Quiz missing fields: {missing_quiz_fields}")
+                    return False
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Validation error: {str(e)}")
+        return False
 
 def format_json_to_markdown(json_data):
     """Convert JSON structure to formatted Markdown"""
@@ -295,8 +313,98 @@ def format_json_to_markdown(json_data):
     
     return markdown
 
+def store_syllabus_in_db(json_data):
+    """Store generated syllabus in database"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Insert course data
+        cur.execute("""
+            INSERT INTO courses (title, description, structure)
+            VALUES (%s, %s, %s)
+            RETURNING id
+        """, (
+            json_data['title'],
+            json_data['courseDescription'],
+            Json(json_data['courseStructure'])
+        ))
+        
+        course_id = cur.fetchone()[0]
+        
+        # Insert weekly topics
+        for week in json_data['weeklyTopics']:
+            cur.execute("""
+                INSERT INTO weekly_topics (course_id, week_number, main_topic, description, content)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
+            """, (
+                course_id,
+                week['week'],
+                week['mainTopic'],
+                week['description'],
+                Json(week)
+            ))
+            
+            weekly_topic_id = cur.fetchone()[0]
+            
+            # Store activities
+            for activity in week['activities']:
+                cur.execute("""
+                    INSERT INTO activities (weekly_topic_id, title, description, duration, type)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    activity['title'],
+                    activity['description'],
+                    activity['duration'],
+                    activity.get('type', 'in-class')
+                ))
+            
+            # Store assignments
+            for assignment in week['assignments']:
+                cur.execute("""
+                    INSERT INTO assignments (weekly_topic_id, title, description, due_date, weightage)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    assignment['title'],
+                    assignment['description'],
+                    assignment['dueDate'],
+                    assignment['weightage']
+                ))
+            
+            # Store quiz
+            if week.get('quiz'):
+                cur.execute("""
+                    INSERT INTO quizzes (weekly_topic_id, title, format, duration, num_questions, total_points)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    week['quiz']['title'],
+                    week['quiz']['format'],
+                    week['quiz']['duration'],
+                    week['quiz']['numQuestions'],
+                    week['quiz']['totalPoints']
+                ))
+        
+        conn.commit()
+        logger.info(f"Successfully stored course with ID: {course_id}")
+        return course_id
+        
+    except Exception as e:
+        logger.error(f"Database storage failed: {str(e)}")
+        if 'conn' in locals():
+            conn.rollback()
+        raise
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
+
 def generate_response(prompt_data):
-    """Generate response using Gemini with Google Search integration"""
+    """Generate response using Gemini"""
     logger.info(f'Generating syllabus for topic: "{prompt_data["topic"][:50]}..."')
     
     try:
@@ -311,19 +419,12 @@ def generate_response(prompt_data):
         
         model_id = "gemini-2.0-flash-exp"
         
-        logger.debug('Initializing Google Search tool')
-        google_search_tool = Tool(
-            google_search=GoogleSearch()
-        )
-        
         logger.debug('Configuring generation parameters')
         config = GenerateContentConfig(
             temperature=1,
             top_p=0.95,
             top_k=40,
             candidate_count=1,
-            tools=[google_search_tool],
-            response_modalities=["TEXT"],
             max_output_tokens=8192,
             stop_sequences=["STOP!"],
             presence_penalty=0.0,
@@ -339,13 +440,12 @@ def generate_response(prompt_data):
         
         if not response or not response.candidates:
             logger.warning('No response generated from API')
-            return {"text": "No response generated", "metadata": {}}
+            return {"text": "No response generated"}
         
         result = response.candidates[0].content.parts[0].text
         
         try:
             # Clean the response to ensure it's valid JSON
-            # Remove any leading/trailing non-JSON content
             json_str = result.strip()
             if not json_str.startswith('{'):
                 json_str = json_str[json_str.find('{'):]
@@ -367,11 +467,17 @@ def generate_response(prompt_data):
             logger.warning(f'JSON parsing failed: {str(e)}, using raw text')
             formatted_text = result
         
-        metadata = extract_search_metadata(response.candidates[0])
+        if 'json_data' in locals() and validate_json_structure(json_data):
+            # Store in database
+            course_id = store_syllabus_in_db(json_data)
+            return {
+                "text": formatted_text,
+                "raw_json": json_data,
+                "course_id": course_id
+            }
         
         return {
             "text": formatted_text,
-            "metadata": metadata,
             "raw_json": json_data if 'json_data' in locals() else None
         }
         

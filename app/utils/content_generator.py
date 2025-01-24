@@ -3,8 +3,27 @@ from google.genai.types import Tool, GenerateContentConfig, GoogleSearch, Part
 from flask import current_app
 import logging
 import json
+import psycopg2
+from psycopg2.extras import Json
+from dotenv import load_dotenv
+import os
 
+# Load environment variables
+load_dotenv()
+
+# Configure logger
 logger = logging.getLogger(__name__)
+
+def get_db_connection():
+    """Get database connection using environment variables"""
+    try:
+        return psycopg2.connect(
+            os.getenv('POSTGRES_URL_NON_POOLING'),
+            sslmode='require'
+        )
+    except Exception as e:
+        logger.error(f"Database connection failed: {str(e)}")
+        raise
 
 def extract_content_metadata(response_candidate, week_number):
     """Extract metadata specific to weekly content"""
@@ -78,7 +97,176 @@ def clean_json_string(json_str):
         logger.debug("Failed string: %s", json_str)
         return None
 
-def generate_weekly_content(topic, week_data):
+def store_weekly_content(course_id, week_data, generated_content):
+    """Store generated weekly content in database"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Update or insert weekly topic content
+        cur.execute("""
+            UPDATE weekly_topics 
+            SET content = content || %s
+            WHERE course_id = %s AND week_number = %s
+            RETURNING id
+        """, (
+            Json(generated_content),
+            course_id,
+            week_data['week']
+        ))
+        
+        result = cur.fetchone()
+        if not result:
+            logger.error(f"No weekly topic found for course {course_id}, week {week_data['week']}")
+            return None
+            
+        weekly_topic_id = result[0]
+        
+        # Store resources
+        if 'resources' in generated_content['content']:
+            resources = generated_content['content']['resources']
+            
+            # Store videos
+            for video in resources.get('videos', []):
+                cur.execute("""
+                    INSERT INTO resources (weekly_topic_id, type, title, url, description)
+                    VALUES (%s, 'video', %s, %s, %s)
+                """, (weekly_topic_id, video['title'], video['url'], video['description']))
+            
+            # Store articles
+            for article in resources.get('articles', []):
+                cur.execute("""
+                    INSERT INTO resources (weekly_topic_id, type, title, url, description)
+                    VALUES (%s, 'article', %s, %s, %s)
+                """, (weekly_topic_id, article['title'], article['url'], article.get('relevance', '')))
+            
+            # Store tools
+            for tool in resources.get('tools', []):
+                cur.execute("""
+                    INSERT INTO resources (weekly_topic_id, type, title, url, description)
+                    VALUES (%s, 'tool', %s, %s, %s)
+                """, (weekly_topic_id, tool['name'], tool['url'], tool.get('purpose', '')))
+        
+        # Store key points
+        if 'lecture' in generated_content['content']:
+            lecture = generated_content['content']['lecture']
+            
+            # Store slides as key points
+            for idx, point in enumerate(lecture.get('slides', [])):
+                cur.execute("""
+                    INSERT INTO key_points (weekly_topic_id, content, order_index)
+                    VALUES (%s, %s, %s)
+                """, (weekly_topic_id, point, idx))
+            
+            # Store examples
+            for example in lecture.get('examples', []):
+                title = None
+                content = example
+                
+                # Check if example contains a title (separated by colon)
+                if ':' in example:
+                    title, content = example.split(':', 1)
+                
+                cur.execute("""
+                    INSERT INTO examples (weekly_topic_id, title, content)
+                    VALUES (%s, %s, %s)
+                """, (weekly_topic_id, title, content.strip()))
+        
+        # Store practice exercises
+        if 'exercises' in generated_content['content']:
+            for exercise in generated_content['content']['exercises']:
+                cur.execute("""
+                    INSERT INTO practice_exercises 
+                    (weekly_topic_id, title, description, difficulty, instructions)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    weekly_topic_id,
+                    exercise['title'],
+                    exercise['description'],
+                    exercise['difficulty'],
+                    Json(exercise.get('instructions', []))
+                ))
+        
+        conn.commit()
+        return weekly_topic_id
+        
+    except Exception as e:
+        logger.error(f"Error storing weekly content: {str(e)}")
+        if 'conn' in locals():
+            conn.rollback()
+        return None
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
+
+def retrieve_weekly_content(weekly_topic_id):
+    """Retrieve complete weekly content from database"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Get main content
+        cur.execute("""
+            SELECT content FROM weekly_topics WHERE id = %s
+        """, (weekly_topic_id,))
+        content = cur.fetchone()
+        
+        if not content:
+            return None
+            
+        result = content[0]
+        
+        # Get key points
+        cur.execute("""
+            SELECT content FROM key_points 
+            WHERE weekly_topic_id = %s 
+            ORDER BY order_index
+        """, (weekly_topic_id,))
+        key_points = [row[0] for row in cur.fetchall()]
+        
+        # Get examples
+        cur.execute("""
+            SELECT title, content FROM examples 
+            WHERE weekly_topic_id = %s
+        """, (weekly_topic_id,))
+        examples = [{
+            'title': row[0],
+            'content': row[1]
+        } for row in cur.fetchall()]
+        
+        # Get practice exercises
+        cur.execute("""
+            SELECT title, description, difficulty, instructions 
+            FROM practice_exercises 
+            WHERE weekly_topic_id = %s
+        """, (weekly_topic_id,))
+        exercises = [{
+            'title': row[0],
+            'description': row[1],
+            'difficulty': row[2],
+            'instructions': row[3]
+        } for row in cur.fetchall()]
+        
+        # Merge all content
+        if isinstance(result, dict):
+            result['content']['lecture']['slides'] = key_points
+            result['content']['examples'] = examples
+            result['content']['exercises'] = exercises
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error retrieving weekly content: {str(e)}")
+        return None
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
+
+def generate_weekly_content(topic, week_data, course_id):
     """Generate detailed content for a specific weekly topic"""
     logger.debug(f"Received week data: {week_data}")
     
@@ -171,7 +359,7 @@ Use this exact JSON structure, ensuring all content aligns with the provided top
     "topic": "{week_data['mainTopic']}",
     "content": {{
         "lecture": {{
-            "notes": "# {week_data['mainTopic']}\\n\\n[Structured content following the exact topic outline above]",
+            "notes": "{week_data['mainTopic']}[Structured content following the exact topic outline above]",
             "slides": [
                 "One slide per major section, following the given structure",
                 "Must cover all specified points in order"
@@ -235,7 +423,11 @@ Points: {week_data['quiz']['totalPoints']}
 
 Ensure all content directly supports these specific topics and builds toward the quiz requirements.
 """
-        client = genai.Client(api_key=current_app.config['GEMINI_API_KEY'])
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not found in environment variables")
+        
+        client = genai.Client(api_key=api_key)
         config = GenerateContentConfig(
             temperature=0.7,  # Lower temperature for more structured output
             top_k=40,
@@ -300,6 +492,15 @@ Ensure all content directly supports these specific topics and builds toward the
                     content['content']['resources']['articles'].extend(metadata['articles'])
                 
                 logger.debug(f"Successfully generated content for week {week_data.get('week')}")
+                
+                # Store in database
+                weekly_topic_id = store_weekly_content(course_id, week_data, content)
+                if weekly_topic_id:
+                    content['weekly_topic_id'] = weekly_topic_id
+                    logger.info(f"Successfully stored content for week {week_data.get('week')}")
+                else:
+                    logger.error("Failed to store weekly content in database")
+                
                 return content
                 
             except json.JSONDecodeError as e:

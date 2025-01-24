@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
+from markupsafe import Markup
+import markdown2
 import traceback
 from .utils.ai_helper import generate_response
-from .utils.content_generator import generate_weekly_content
+from .utils.content_generator import generate_weekly_content, retrieve_weekly_content
 
 main_bp = Blueprint('main', __name__)
 
@@ -36,19 +38,32 @@ def generate_week_content():
     """Generate detailed content for a specific week"""
     try:
         data = request.json
-        if not data or 'weekData' not in data:
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        if 'weekData' not in data:
             return jsonify({'error': 'No week data provided'}), 400
 
+        if 'courseId' not in data:
+            return jsonify({'error': 'Course ID is required'}), 400
+
         week_data = data['weekData']
+        course_id = data.get('courseId')
+
+        try:
+            course_id = int(course_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid course ID format'}), 400
+
         if not isinstance(week_data, dict):
             return jsonify({'error': 'Invalid week data format'}), 400
 
-        current_app.logger.info(f'Generating content for week {week_data.get("week", "unknown")}')
+        current_app.logger.info(f'Generating content for week {week_data.get("week", "unknown")} of course {course_id}')
         
-        # Generate detailed content for the week
         content = generate_weekly_content(
             topic=week_data.get('mainTopic', ''),
-            week_data=week_data
+            week_data=week_data,
+            course_id=course_id
         )
         
         if content is None:
@@ -59,7 +74,9 @@ def generate_week_content():
             
         return jsonify({
             'content': content,
-            'week': week_data.get('week')
+            'week': week_data.get('week'),
+            'weekly_topic_id': content.get('weekly_topic_id'),  # Include weekly_topic_id
+            'course_id': course_id
         })
         
     except Exception as e:
@@ -73,12 +90,58 @@ def generate_week_content():
 @main_bp.route('/week-content/<int:week_number>')
 def view_week_content(week_number):
     try:
-        content = request.args.get('content', '')
-        topic = request.args.get('topic', '')
-        return render_template('week_content.html', 
-                             week_number=week_number,
-                             topic=topic,
-                             content=content)
+        weekly_topic_id = request.args.get('id')
+        course_id = request.args.get('course_id')
+        
+        if not weekly_topic_id:
+            return jsonify({'error': 'Weekly topic ID is required'}), 400
+            
+        content = retrieve_weekly_content(weekly_topic_id)
+        if not content:
+            return jsonify({'error': 'Content not found'}), 404
+            
+        # Add markdown filter to template context
+        def markdown_filter(text):
+            if not text:
+                return Markup('')
+            return Markup(markdown2.markdown(
+                text, 
+                extras=['fenced-code-blocks', 'tables', 'break-on-newline']
+            ))
+            
+        # Register filter with template engine
+        current_app.jinja_env.filters['markdown'] = markdown_filter
+            
+        return render_template(
+            'week_content.html',
+            week_number=week_number,
+            main_topic=content.get('topic', ''),
+            description=content.get('description', ''),
+            content=content.get('content', {}),
+            topics=content.get('topics', [])
+        )
+        
     except Exception as e:
         current_app.logger.error(f'Error displaying week content: {str(e)}')
         return jsonify({'error': 'Failed to display content'}), 500
+
+@main_bp.route('/api/week-content/<weekly_topic_id>')
+def get_week_content(weekly_topic_id):
+    """API endpoint to fetch week content by ID"""
+    try:
+        # Handle undefined or invalid ID
+        if weekly_topic_id == 'undefined' or not weekly_topic_id:
+            return jsonify({'error': 'Invalid weekly topic ID'}), 400
+            
+        try:
+            weekly_topic_id = int(weekly_topic_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Weekly topic ID must be a number'}), 400
+
+        content = retrieve_weekly_content(weekly_topic_id)
+        if not content:
+            return jsonify({'error': 'Content not found'}), 404
+        return jsonify({'content': content})
+    except Exception as e:
+        current_app.logger.error(f'Error retrieving week content: {str(e)}')
+        return jsonify({'error': 'Failed to retrieve content'}), 500

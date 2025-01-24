@@ -1,325 +1,73 @@
 import { configureMarkdown } from './renderer.js';
-import { renderWeeklyActivities, renderWeeklyQuiz } from './syllabus.js';
 
-const safeMarkdownParse = (text) => {
-    if (!text) return '';
-    try {
-        // Handle object or string input
-        const processedText = typeof text === 'object' ? 
-            (text.text || JSON.stringify(text)) : 
-            String(text);
-            
-        // Clean up any markdown formatting issues
-        const cleanText = processedText
-            .replace(/^#+\s*/, '')  // Remove leading #'s
-            .trim();
-            
-        return marked.parse(cleanText);
-    } catch (e) {
-        console.warn('Markdown parsing failed:', e);
-        return String(text);
+// Only keep the core functionality needed for content generation and opening
+export const openWeekContent = async (weekNum, weeklyTopicId, courseId) => {
+    if (!weeklyTopicId) {
+        console.error('Weekly topic ID is missing');
+        return;
     }
-};
 
-const formatParagraphs = (text) => {
-    return text
-        // Split into paragraphs on double newlines
-        .split(/\n\n+/)
-        .filter(p => p.trim())
-        .map(p => `<p class="content-paragraph">${p.trim()}</p>`)
-        .join('\n');
-};
-
-const formatSectionContent = (content) => {
-    // First, split content into sections based on numbered headers
-    const sections = content.split(/(?=^\d+\.)/gm);
-    
-    return sections.map(section => {
-        // Process each section
-        const lines = section.split('\n');
-        let formattedSection = '';
+    try {
+        // First verify content exists
+        const response = await fetch(`/api/week-content/${weeklyTopicId}`);
+        const data = await response.json();
         
-        // Extract section title if it exists (numbered header)
-        if (lines[0].match(/^\d+\./)) {
-            formattedSection += `<h2 class="section-title">${lines.shift()}</h2>\n`;
+        if (data.error) {
+            throw new Error(data.error);
         }
         
-        // Process remaining lines
-        const subsections = lines.join('\n').split(/(?=^\d+\.\d+\.)/gm);
+        // Open content in new window/tab
+        const url = `/week-content/${weekNum}?id=${weeklyTopicId}&course_id=${courseId}`;
+        window.open(url, '_blank');
         
-        return subsections.map(subsection => {
-            const subLines = subsection.split('\n');
-            let formattedSubsection = '';
-            
-            // Extract subsection title if it exists
-            if (subLines[0].match(/^\d+\.\d+\./)) {
-                formattedSubsection += `<h3 class="subtopic-title">${subLines.shift()}</h3>\n`;
-            }
-            
-            // Group the remaining content
-            const paragraphs = subLines.join('\n')
-                .replace(/\*\*([^*]+)\*\*/g, '<span class="key-term">$1</span>')
-                .replace(/\*([^*]+)\*/g, '<em class="emphasis">$1</em>')
-                .replace(/^-\s+(.+)$/gm, '<li>$1</li>') // Convert bullet points
-                .replace(/(?:^|\n)>\s*([^\n]+)/g, '<blockquote class="quote-block">$1</blockquote>'); // Format quotes
-            
-            // Wrap bullet points in ul if they exist
-            const hasListItems = paragraphs.includes('<li>');
-            const formattedParagraphs = hasListItems ? 
-                paragraphs.replace(/(<li>.*<\/li>\n*)+/g, '<ul>$&</ul>') :
-                formatParagraphs(paragraphs);
-                
-            formattedSubsection += formattedParagraphs;
-            
-            return `<div class="subtopic">${formattedSubsection}</div>`;
-        }).join('\n');
-        
-    }).join('\n<hr class="separator">\n');
-};
-
-const formatSlides = (slides) => {
-    return `
-        <div class="slides-section">
-            <h2 class="section-header">Key Points</h2>
-            ${slides.map(slide => `
-                <div class="slide-item">${slide}</div>
-            `).join('')}
-        </div>
-    `;
-};
-
-const formatExamples = (examples) => {
-    if (!examples || !examples.length) return '';
-    
-    return `
-        <div class="examples-section">
-            <h2 class="section-header">Examples</h2>
-            ${examples.map(example => {
-                // Split example into title and details if it contains a colon
-                const [title, ...details] = example.split(':');
-                return `
-                    <div class="example-item">
-                        <h4>${title}${details.length ? ':' : ''}</h4>
-                        ${details.length ? `<p>${details.join(':').trim()}</p>` : ''}
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-};
-
-const ensureArray = (arr) => Array.isArray(arr) ? arr : [];
-
-export const renderWeeklyContent = (weekContent) => {
-    if (!weekContent) return '<div class="alert alert-danger">No content available</div>';
-    
-    // Validate content structure
-    if (!weekContent.content || !weekContent.content.lecture) {
-        console.error('Invalid content structure:', weekContent);
-        return '<div class="error-message">Invalid content structure</div>';
-    }
-    
-    // Ensure arrays exist
-    const lecture = weekContent.content.lecture;
-    const resources = weekContent.content.resources || {};
-    const exercises = ensureArray(weekContent.content.exercises);
-    
-    return `
-        <div class="container-fluid p-0">
-            <div class="row g-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="mb-0">Lecture Materials</h4>
-                        </div>
-                        <div class="card-body prose">
-                            ${safeMarkdownParse(lecture.notes)}
-                            
-                            <div class="mt-4">
-                                <h5>Key Points</h5>
-                                <ul class="list-group">
-                                    ${lecture.slides.map(slide => `
-                                        <li class="list-group-item">${slide}</li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-
-                            ${lecture.examples.length > 0 ? `
-                                <div class="mt-4">
-                                    <h5>Examples</h5>
-                                    <div class="bg-light p-3 rounded">
-                                        <pre class="mb-0"><code>${lecture.examples.join('\n\n')}</code></pre>
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-
-                ${weekContent.content.activities ? renderWeeklyActivities(weekContent.content.activities) : ''}
-                ${renderResources(weekContent.content.resources || {})}
-                ${weekContent.content.quiz ? renderWeeklyQuiz(weekContent.content.quiz) : ''}
-                ${renderExercises(weekContent.content.exercises || [])}
-            </div>
-        </div>
-    `;
-};
-
-const renderResources = (resources) => {
-    return `
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h4 class="mb-0">Learning Resources</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row g-4">
-                        ${resources.videos.length > 0 ? `
-                            <div class="col-md-4">
-                                <div class="card h-100 border-primary border-opacity-25">
-                                    <div class="card-header bg-primary bg-opacity-10">
-                                        <h5 class="h6 mb-0">
-                                            <i class="fas fa-video me-2"></i>Video Resources
-                                        </h5>
-                                    </div>
-                                    ${renderResourceList(resources.videos, 'video')}
-                                </div>
-                            </div>
-                        ` : ''}
-                        ${resources.articles.length > 0 ? `
-                            <div class="col-md-4">
-                                <div class="card h-100 border-info border-opacity-25">
-                                    <div class="card-header bg-info bg-opacity-10">
-                                        <h5 class="h6 mb-0">
-                                            <i class="fas fa-book me-2"></i>Reading Materials
-                                        </h5>
-                                    </div>
-                                    ${renderResourceList(resources.articles, 'article')}
-                                </div>
-                            </div>
-                        ` : ''}
-                        ${resources.tools.length > 0 ? `
-                            <div class="col-md-4">
-                                <div class="card h-100 border-success border-opacity-25">
-                                    <div class="card-header bg-success bg-opacity-10">
-                                        <h5 class="h6 mb-0">
-                                            <i class="fas fa-tools me-2"></i>Tools & Software
-                                        </h5>
-                                    </div>
-                                    ${renderResourceList(resources.tools, 'tool')}
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-const renderResourceList = (items, type) => {
-    return `
-        <div class="list-group list-group-flush">
-            ${items.map(item => `
-                <div class="list-group-item">
-                    <a href="${item.url}" class="text-decoration-none" target="_blank" rel="noopener">
-                        <h6 class="mb-1">${item.title || item.name}</h6>
-                    </a>
-                    <p class="mb-0 small text-secondary">
-                        ${item.description || item.purpose || item.relevance}
-                    </p>
-                </div>
-            `).join('')}
-        </div>
-    `;
-};
-
-const renderExercises = (exercises) => {
-    if (!exercises || !exercises.length) return '';
-    
-    const difficultyClasses = {
-        beginner: 'border-success',
-        intermediate: 'border-warning',
-        advanced: 'border-danger',
-        unknown: 'border-secondary'
-    };
-    
-    const difficultyBadges = {
-        beginner: 'bg-success',
-        intermediate: 'bg-warning text-dark',
-        advanced: 'bg-danger',
-        unknown: 'bg-secondary'
-    };
-
-    return `
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">Practice Exercises</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row g-4">
-                        ${exercises.map(exercise => `
-                            <div class="col-md-6">
-                                <div class="card h-100 ${difficultyClasses[exercise.difficulty || 'unknown']} border-opacity-50">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h5 class="h6 mb-0">${exercise.title || 'Untitled Exercise'}</h5>
-                                        <span class="badge ${difficultyBadges[exercise.difficulty || 'unknown']}">
-                                            ${exercise.difficulty || 'Unknown'} Level
-                                        </span>
-                                    </div>
-                                    <div class="card-body">
-                                        <p class="card-text text-secondary mb-3">${exercise.description || ''}</p>
-                                        <ol class="list-group list-group-numbered">
-                                            ${ensureArray(exercise.instructions).map(instruction => `
-                                                <li class="list-group-item">${instruction}</li>
-                                            `).join('')}
-                                        </ol>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-export const openWeekContent = (weekNumber, topic, content) => {
-    try {
-        const contentHtml = renderWeeklyContent(content);
-        const params = new URLSearchParams({
-            content: contentHtml,
-            topic: topic || 'Weekly Content'
-        });
-        window.open(`/week-content/${weekNumber}?${params}`, `week${weekNumber}`,
-            'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
     } catch (error) {
-        console.error('Error opening week content:', error);
-        alert('Failed to open week content. Please try again.');
+        console.error('Failed to open week content:', error);
+        alert('Failed to open week content: ' + error.message);
     }
 };
 
-export const generateAllWeeklyContent = async (weeks, updateUI) => {
+export const generateAllWeeklyContent = async (weeks, courseId, updateUI) => {
+    if (!weeks?.length || !courseId) {
+        console.error('Missing required data for bulk generation');
+        return;
+    }
+
+    const totalWeeks = weeks.length;
     let completedCount = 0;
-    
-    for (const week of weeks) {
+
+    for (const weekData of weeks) {
         try {
-            const contentResponse = await fetch('/generate/week-content', {
+            const response = await fetch('/generate/week-content', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ weekData: week })
+                body: JSON.stringify({ weekData, courseId })
             });
             
-            const data = await contentResponse.json();
-            if (data.error) throw new Error(data.error);
+            const data = await response.json();
             
-            updateUI(week.week, week.mainTopic, data.content, ++completedCount, weeks.length);
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            completedCount++;
+            updateUI?.(
+                weekData.week, 
+                data.weekly_topic_id, 
+                courseId, 
+                completedCount, 
+                totalWeeks
+            );
             
         } catch (error) {
-            console.error(`Error generating content for week ${week.week}:`, error);
-            updateUI(week.week, null, null, completedCount, weeks.length, error);
+            console.error(`Error generating content for week ${weekData.week}:`, error);
+            updateUI?.(
+                weekData.week, 
+                null, 
+                courseId, 
+                completedCount, 
+                totalWeeks, 
+                error
+            );
         }
     }
 };
