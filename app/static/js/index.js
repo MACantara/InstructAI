@@ -74,26 +74,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
             
-            // Render a simple week list
+            // Render syllabus as a table
             const weeks = data.response.raw_json.weeklyTopics;
             elements.responseArea.innerHTML = `
                 <div class="card shadow-sm">
                     <div class="card-header bg-white">
-                        <h2 class="h5 mb-0"><i class="fas fa-list me-2 text-primary"></i>${data.response.raw_json.title}</h2>
+                        <h2 class="h5 mb-0"><i class="fas fa-table me-2 text-primary"></i>${data.response.raw_json.title}</h2>
                     </div>
-                    <div class="list-group list-group-flush">
-                        ${weeks.map(week => `
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="fw-bold">Week ${week.week}:</span> ${week.mainTopic}
-                                </div>
-                                <div class="week-content" data-week="${week.week}">
-                                    <button class="btn btn-sm btn-outline-primary load-content-btn" data-week="${week.week}">
-                                        <i class="fas fa-cog me-1"></i> Generate Content
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col" style="width:70px;">Week</th>
+                                    <th scope="col">Main Topic</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col" style="width:180px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${weeks.map(week => `
+                                    <tr>
+                                        <td class="text-center fw-bold">${week.week}</td>
+                                        <td class="fw-semibold">${week.mainTopic}</td>
+                                        <td class="text-secondary small">${week.description || ''}</td>
+                                        <td class="text-center">
+                                            <div class="week-content" data-week="${week.week}">
+                                                <button class="btn btn-sm btn-outline-primary load-content-btn" data-week="${week.week}">
+                                                    <i class="fas fa-cog me-1"></i> Generate Content
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 </div>`;
 
