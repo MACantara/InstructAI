@@ -1,5 +1,3 @@
-import { configureMarkdown } from './modules/renderer.js';
-import { renderSyllabus } from './modules/syllabus.js';
 import { openWeekContent, generateAllWeeklyContent } from './modules/weekContent.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,10 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
         bulkActions: document.getElementById('bulk-actions')
     };
 
-    configureMarkdown();
-
     const updateWeekContentUI = (weekNum, weeklyTopicId, courseId, completedCount, totalCount, error = null) => {
-        const weekContainer = document.querySelector(`div.week-block:nth-child(${weekNum}) .week-content`);
+        const weekContainer = document.querySelector(`.week-content[data-week="${weekNum}"]`);
         const generateAllBtn = document.getElementById('generateAllContent');
 
         if (error) {
@@ -59,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.responseArea.innerHTML = `
                 <div class="d-flex align-items-center justify-content-center p-4">
                     <div class="text-primary">
-                        <i class="fas fa-graduation-cap fa-2x me-3"></i>
+                        <i class="fas fa-spinner fa-spin fa-2x me-3"></i>
                         Creating your syllabus...
                     </div>
                 </div>`;
@@ -78,13 +74,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
             
-            // Update response area with structured syllabus
+            // Render a simple week list
+            const weeks = data.response.raw_json.weeklyTopics;
             elements.responseArea.innerHTML = `
                 <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="syllabus-content prose">
-                            ${renderSyllabus(data.response)}
-                        </div>
+                    <div class="card-header bg-white">
+                        <h2 class="h5 mb-0"><i class="fas fa-list me-2 text-primary"></i>${data.response.raw_json.title}</h2>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        ${weeks.map(week => `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold">Week ${week.week}:</span> ${week.mainTopic}
+                                </div>
+                                <div class="week-content" data-week="${week.week}">
+                                    <button class="btn btn-sm btn-outline-primary load-content-btn" data-week="${week.week}">
+                                        <i class="fas fa-cog me-1"></i> Generate Content
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>`;
 
