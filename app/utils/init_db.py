@@ -23,16 +23,18 @@ def init_db():
         logger.info(f"Connecting to MongoDB: {db_name}")
 
         # Create indexes for 'courses' collection
-        # MongoDB creates collections automatically on first insert, 
-        # but we can pre-define indexes for performance
+        # MongoDB creates collections automatically on first insert,
+        # but we pre-define indexes for performance
         db.courses.create_index([("title", ASCENDING)])
         db.courses.create_index([("createdAt", ASCENDING)])
         logger.info("Successfully created/verified indexes for 'courses' collection")
 
-        # In the new simplified workflow, weekly topics are stored 
-        # within the course document's 'weeklyTopics' array.
-        # If we ever need to query by week across courses:
-        db.courses.create_index([("weeklyTopics.week", ASCENDING)])
+        # Index on weekRange for week-based queries across courses
+        db.courses.create_index([("weeklyTopics.weekRange", ASCENDING)])
+        # Index on courseOutcomes for filtering by outcome
+        db.courses.create_index([("courseOutcomes.id", ASCENDING)])
+        # Index on weekly courseOutcomes references
+        db.courses.create_index([("weeklyTopics.courseOutcomes", ASCENDING)])
         
         logger.info("Database initialization complete")
         

@@ -58,3 +58,90 @@
     border-radius: 0.375rem;
     padding: 1rem;
 }
+
+/* =========================================
+   University Syllabus Table
+   ========================================= */
+
+.syllabus-wrapper {
+    font-size: 0.92rem;
+}
+
+.syllabus-table {
+    font-size: 0.88rem;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.syllabus-table thead th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+    white-space: normal;
+    line-height: 1.3;
+}
+
+/* Column widths */
+.syllabus-table .col-week        { width: 7%; }
+.syllabus-table .col-topics      { width: 22%; }
+.syllabus-table .col-co          { width: 8%; }
+.syllabus-table .col-kpi         { width: 18%; }
+.syllabus-table .col-activities  { width: 22%; }
+.syllabus-table .col-assessment  { width: 23%; }
+
+.syllabus-table td {
+    vertical-align: top;
+    padding: 0.65rem 0.75rem;
+    line-height: 1.45;
+}
+
+.syllabus-table .week-cell {
+    vertical-align: middle;
+}
+
+.week-badge {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    padding: 0.35em 0.6em;
+}
+
+.co-badge {
+    display: inline-block;
+    margin: 2px 2px;
+    font-size: 0.75rem;
+}
+
+.co-cell {
+    vertical-align: middle;
+}
+
+.subtopics-list {
+    margin-top: 0.3rem;
+    color: #555;
+}
+
+.subtopics-list li {
+    margin-bottom: 0.15rem;
+}
+
+.kpi-cell {
+    font-style: italic;
+    color: #444;
+}
+
+.syllabus-table ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.syllabus-table ul li {
+    margin-bottom: 0.2rem;
+}
+
+/* Print styles */
+@media print {
+    .syllabus-wrapper .card-header { -webkit-print-color-adjust: exact; }
+    .syllabus-table thead th      { -webkit-print-color-adjust: exact; }
+    .btn { display: none; }
+}
