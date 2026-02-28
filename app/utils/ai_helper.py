@@ -101,34 +101,6 @@ Example structure for one week's content:
             ]
         }}
     ],
-    "activities": [
-        {{
-            "type": "in-class exercise",
-            "title": "string",
-            "description": "string",
-            "duration": "string (e.g. '30 minutes')"
-        }}
-    ],
-    "assignments": [
-        {{
-            "title": "string",
-            "description": "string",
-            "dueDate": "string (e.g. 'End of Week 1')",
-            "weightage": "string (e.g. '10%')"
-        }}
-    ]
-}}
-
-Generate a complete syllabus JSON using this schema:
-
-{{
-    "title": "{topic} Syllabus",
-    "courseDescription": "string (max 200 words)",
-    "courseStructure": {{
-        "duration": "12 weeks",
-        "format": "string (specify delivery method)",
-        "assessment": "string (evaluation methods)"
-    }},
     "weeklyTopics": [
         // Array of 12 week objects following example structure above
     ]
@@ -150,7 +122,7 @@ def validate_json_structure(json_data):
     """Validate the JSON structure matches our expected schema"""
     required_fields = ['title', 'courseDescription', 'courseStructure', 'weeklyTopics']
     course_structure_fields = ['duration', 'format', 'assessment']
-    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments']
+    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics']
 
     try:
         # Check required top-level fields
@@ -188,11 +160,6 @@ def validate_json_structure(json_data):
                     logger.error(f"Topic '{topic.get('subtitle')}' must have at least 3 points")
                     return False
 
-            # Validate activities and assignments
-            if not isinstance(week.get('activities', []), list) or not isinstance(week.get('assignments', []), list):
-                logger.error(f"Week {week.get('week')}: activities and assignments must be lists")
-                return False
-
         return True
 
     except Exception as e:
@@ -220,20 +187,6 @@ def format_json_to_markdown(json_data):
             markdown += f"#### {topic['subtitle']}\n"
             for point in topic['points']:
                 markdown += f"- {point}\n"
-            markdown += "\n"
-            
-        if week['activities']:
-            markdown += "#### In-Class Activities\n"
-            for activity in week['activities']:
-                markdown += f"- **{activity['title']}** ({activity['duration']})\n"
-                markdown += f"  {activity['description']}\n"
-            markdown += "\n"
-            
-        if week['assignments']:
-            markdown += "#### Assignments\n"
-            for assignment in week['assignments']:
-                markdown += f"- **{assignment['title']}** (Due: {assignment['dueDate']}, Weight: {assignment['weightage']})\n"
-                markdown += f"  {assignment['description']}\n"
             markdown += "\n"
     
     return markdown
