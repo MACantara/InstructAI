@@ -119,14 +119,7 @@ Example structure for one week's content:
             "dueDate": "string (e.g. 'End of Week 1')",
             "weightage": "string (e.g. '10%')"
         }}
-    ],
-    "quiz": {{
-        "title": "string",
-        "duration": "string (e.g. '30 minutes')",
-        "totalPoints": "number",
-        "numQuestions": "number",
-        "format": "string (e.g. 'multiple-choice, short answer')"
-    }}
+    ]
 }}
 
 Generate a complete syllabus JSON using this schema:
@@ -189,8 +182,7 @@ def validate_json_structure(json_data):
     """Validate the JSON structure matches our expected schema"""
     required_fields = ['title', 'courseDescription', 'courseStructure', 'weeklyTopics']
     course_structure_fields = ['duration', 'format', 'assessment']
-    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments', 'quiz']
-    quiz_fields = ['title', 'duration', 'totalPoints', 'numQuestions', 'format']
+    weekly_topic_fields = ['week', 'mainTopic', 'description', 'topics', 'activities', 'assignments']
 
     try:
         # Check required top-level fields
@@ -232,17 +224,6 @@ def validate_json_structure(json_data):
             if not isinstance(week.get('activities', []), list) or not isinstance(week.get('assignments', []), list):
                 logger.error(f"Week {week.get('week')}: activities and assignments must be lists")
                 return False
-
-            # Validate quiz structure if present
-            quiz = week.get('quiz')
-            if quiz is not None:  # Only validate if quiz exists
-                if not isinstance(quiz, dict):
-                    logger.error(f"Week {week.get('week')}: quiz must be an object")
-                    return False
-                missing_quiz_fields = [field for field in quiz_fields if field not in quiz]
-                if missing_quiz_fields:
-                    logger.error(f"Week {week.get('week')}: Quiz missing fields: {missing_quiz_fields}")
-                    return False
 
         return True
 
@@ -286,14 +267,6 @@ def format_json_to_markdown(json_data):
                 markdown += f"- **{assignment['title']}** (Due: {assignment['dueDate']}, Weight: {assignment['weightage']})\n"
                 markdown += f"  {assignment['description']}\n"
             markdown += "\n"
-        
-        if 'quiz' in week and week['quiz']:
-            markdown += "#### Quiz\n"
-            markdown += f"**{week['quiz']['title']}**\n"
-            markdown += f"- Duration: {week['quiz']['duration']}\n"
-            markdown += f"- Format: {week['quiz']['format']}\n"
-            markdown += f"- Questions: {week['quiz']['numQuestions']}\n"
-            markdown += f"- Total Points: {week['quiz']['totalPoints']}\n\n"
     
     if 'learningObjectives' in json_data:
         markdown += "## Learning Objectives\n"
@@ -372,20 +345,6 @@ def store_syllabus_in_db(json_data):
                     assignment['description'],
                     assignment['dueDate'],
                     assignment['weightage']
-                ))
-            
-            # Store quiz
-            if week.get('quiz'):
-                cur.execute("""
-                    INSERT INTO quizzes (weekly_topic_id, title, format, duration, num_questions, total_points)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (
-                    weekly_topic_id,
-                    week['quiz']['title'],
-                    week['quiz']['format'],
-                    week['quiz']['duration'],
-                    week['quiz']['numQuestions'],
-                    week['quiz']['totalPoints']
                 ))
         
         conn.commit()
