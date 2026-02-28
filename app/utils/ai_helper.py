@@ -417,7 +417,7 @@ def generate_response(prompt_data):
             prompt_data.get("include_readings", True)
         )
         
-        model_id = "gemini-2.0-flash-exp"
+        model_id = "gemma-3-27b-it"
         
         logger.debug('Configuring generation parameters')
         config = GenerateContentConfig(
@@ -434,7 +434,7 @@ def generate_response(prompt_data):
         logger.debug('Sending request to Gemini API')
         response = client.models.generate_content(
             model=model_id,
-            contents=Part.from_text(full_prompt),
+            contents=full_prompt,
             config=config
         )
         
