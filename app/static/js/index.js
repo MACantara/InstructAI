@@ -8,8 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
         generateBtn: document.getElementById('generate'),
         topicInput: document.getElementById('topic'),
         responseArea: document.getElementById('response'),
-        includeObjectives: document.getElementById('includeObjectives'),
-        includeReadings: document.getElementById('includeReadings'),
         bulkActions: document.getElementById('bulk-actions')
     };
 
@@ -70,9 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    topic: topic,
-                    include_objectives: elements.includeObjectives.checked,
-                    include_readings: elements.includeReadings.checked
+                    topic: topic
                 })
             });
 

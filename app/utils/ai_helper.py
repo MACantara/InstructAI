@@ -3,6 +3,7 @@ from google.genai.types import GenerateContentConfig, Part
 from flask import current_app
 import logging
 import json
+from datetime import datetime
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
@@ -39,7 +40,7 @@ def init_gemini():
         logger.error(f'Failed to initialize Gemini client: {str(e)}')
         raise
 
-def generate_syllabus_prompt(topic, include_objectives=True, include_readings=True):
+def generate_syllabus_prompt(topic):
     """Generate a structured prompt for syllabus creation"""
     prompt = f"""You are an experienced curriculum designer with expertise in creating comprehensive syllabi. 
 Your task is to create a detailed, well-structured syllabus for '{topic}'.
@@ -59,9 +60,7 @@ Your response will be rejected if:
 
 Step 1: Analyze the topic and determine the appropriate scope and depth
 Step 2: Structure the course content logically over 12 weeks
-Step 3: Define clear learning objectives
-Step 4: Select relevant readings and materials
-Step 5: Format the output as valid JSON
+Step 3: Format the output as valid JSON
 
 Think carefully about each step before providing your response.
 
@@ -132,47 +131,18 @@ Generate a complete syllabus JSON using this schema:
     }},
     "weeklyTopics": [
         // Array of 12 week objects following example structure above
-    ]"""
-
-    if include_objectives:
-        prompt += """,
-    "learningObjectives": [
-        "string (start with measurable action verbs)",
-        "string (focus on demonstrable skills)"
-    ]"""
-
-    if include_readings:
-        prompt += """,
-    "readings": {{
-        "required": [
-            {{
-                "title": "string (full title)",
-                "author": "string (full name)",
-                "description": "string (2-3 sentences)"
-            }}
-        ],
-        "recommended": [
-            {{
-                "title": "string (full title)",
-                "author": "string (full name)",
-                "description": "string (2-3 sentences)"
-            }}
-        ]
-    }}"""
-
-    prompt += """}
+    ]
+}}
 
 Quality criteria:
 1. Topics should progress logically from foundational to advanced concepts
 2. Each week's content should be realistic to cover in the time allocated
-3. Learning objectives must be specific and measurable
-4. Reading selections should directly support the weekly topics
 
 Before finalizing your response:
 1. Verify all JSON syntax is valid
 2. Check that all required fields are present
-3. Ensure consistency between topics and objectives
-4. Confirm readings align with course progression"""
+3. Ensure consistency between topics
+4. Confirm progression matches 12 weeks"""
 
     return prompt
 
@@ -266,22 +236,6 @@ def format_json_to_markdown(json_data):
                 markdown += f"  {assignment['description']}\n"
             markdown += "\n"
     
-    if 'learningObjectives' in json_data:
-        markdown += "## Learning Objectives\n"
-        for objective in json_data['learningObjectives']:
-            markdown += f"- {objective}\n"
-        markdown += "\n"
-    
-    if 'readings' in json_data:
-        markdown += "## Required Readings\n"
-        for reading in json_data['readings']['required']:
-            markdown += f"- **{reading['title']}** by {reading['author']}\n"
-            markdown += f"  {reading['description']}\n"
-        markdown += "\n### Recommended Readings\n"
-        for reading in json_data['readings']['recommended']:
-            markdown += f"- **{reading['title']}** by {reading['author']}\n"
-            markdown += f"  {reading['description']}\n"
-    
     return markdown
 
 def store_syllabus_in_db(json_data):
@@ -289,20 +243,13 @@ def store_syllabus_in_db(json_data):
     try:
         db = get_db_connection()
         
-        # Insert course data into "courses" collection
         course_doc = {
             "title": json_data['title'],
             "description": json_data['courseDescription'],
             "structure": json_data['courseStructure'],
             "weeklyTopics": json_data['weeklyTopics'],
-            "learningObjectives": json_data.get('learningObjectives', []),
-            "readings": json_data.get('readings', {}),
-            "createdAt": os.popen('date /t').read().strip() # Simple fallback for timestamp
+            "createdAt": datetime.utcnow()
         }
-        
-        # If we have datetime, use it instead
-        from datetime import datetime
-        course_doc["createdAt"] = datetime.utcnow()
 
         result = db.courses.insert_one(course_doc)
         course_id = str(result.inserted_id)
@@ -322,11 +269,7 @@ def generate_response(prompt_data):
         client = init_gemini()
         
         # Generate structured prompt
-        full_prompt = generate_syllabus_prompt(
-            prompt_data["topic"],
-            prompt_data.get("include_objectives", True),
-            prompt_data.get("include_readings", True)
-        )
+        full_prompt = generate_syllabus_prompt(prompt_data["topic"])
         
         model_id = "gemma-3-27b-it"
         
