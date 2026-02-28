@@ -3,8 +3,7 @@ from google.genai.types import GenerateContentConfig, Part
 from flask import current_app
 import logging
 import json
-import psycopg2
-from psycopg2.extras import Json
+from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
@@ -17,12 +16,11 @@ logger.setLevel(logging.DEBUG)  # Ensure debug logs are captured
 logger.propagate = False
 
 def get_db_connection():
-    """Get database connection using environment variables"""
+    """Get MongoDB connection using environment variables"""
     try:
-        return psycopg2.connect(
-            os.getenv('POSTGRES_URL_NON_POOLING'),
-            sslmode='require'
-        )
+        client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017/'))
+        db_name = os.getenv('DB_NAME', 'instructai')
+        return client[db_name]
     except Exception as e:
         logger.error(f"Database connection failed: {str(e)}")
         raise
@@ -287,80 +285,34 @@ def format_json_to_markdown(json_data):
     return markdown
 
 def store_syllabus_in_db(json_data):
-    """Store generated syllabus in database"""
+    """Store generated syllabus in MongoDB"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        db = get_db_connection()
         
-        # Insert course data
-        cur.execute("""
-            INSERT INTO courses (title, description, structure)
-            VALUES (%s, %s, %s)
-            RETURNING id
-        """, (
-            json_data['title'],
-            json_data['courseDescription'],
-            Json(json_data['courseStructure'])
-        ))
+        # Insert course data into "courses" collection
+        course_doc = {
+            "title": json_data['title'],
+            "description": json_data['courseDescription'],
+            "structure": json_data['courseStructure'],
+            "weeklyTopics": json_data['weeklyTopics'],
+            "learningObjectives": json_data.get('learningObjectives', []),
+            "readings": json_data.get('readings', {}),
+            "createdAt": os.popen('date /t').read().strip() # Simple fallback for timestamp
+        }
         
-        course_id = cur.fetchone()[0]
+        # If we have datetime, use it instead
+        from datetime import datetime
+        course_doc["createdAt"] = datetime.utcnow()
+
+        result = db.courses.insert_one(course_doc)
+        course_id = str(result.inserted_id)
         
-        # Insert weekly topics
-        for week in json_data['weeklyTopics']:
-            cur.execute("""
-                INSERT INTO weekly_topics (course_id, week_number, main_topic, description, content)
-                VALUES (%s, %s, %s, %s, %s)
-                RETURNING id
-            """, (
-                course_id,
-                week['week'],
-                week['mainTopic'],
-                week['description'],
-                Json(week)
-            ))
-            
-            weekly_topic_id = cur.fetchone()[0]
-            
-            # Store activities
-            for activity in week['activities']:
-                cur.execute("""
-                    INSERT INTO activities (weekly_topic_id, title, description, duration, type)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (
-                    weekly_topic_id,
-                    activity['title'],
-                    activity['description'],
-                    activity['duration'],
-                    activity.get('type', 'in-class')
-                ))
-            
-            # Store assignments
-            for assignment in week['assignments']:
-                cur.execute("""
-                    INSERT INTO assignments (weekly_topic_id, title, description, due_date, weightage)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (
-                    weekly_topic_id,
-                    assignment['title'],
-                    assignment['description'],
-                    assignment['dueDate'],
-                    assignment['weightage']
-                ))
-        
-        conn.commit()
         logger.info(f"Successfully stored course with ID: {course_id}")
         return course_id
         
     except Exception as e:
-        logger.error(f"Database storage failed: {str(e)}")
-        if 'conn' in locals():
-            conn.rollback()
+        logger.error(f"MongoDB storage failed: {str(e)}")
         raise
-    finally:
-        if 'cur' in locals():
-            cur.close()
-        if 'conn' in locals():
-            conn.close()
 
 def generate_response(prompt_data):
     """Generate response using Gemini"""
