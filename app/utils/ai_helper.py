@@ -345,7 +345,7 @@ def generate_response(prompt_data):
         # Generate structured prompt
         full_prompt = generate_syllabus_prompt(prompt_data["topic"])
         
-        model_id = "gemma-3-27b-it"
+        model_id = "gemini-3.1-flash-lite-preview"
         
         logger.debug('Configuring generation parameters')
         config = GenerateContentConfig(
