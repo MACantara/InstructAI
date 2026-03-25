@@ -191,6 +191,7 @@ GLOBAL STRUCTURE RULES
     - Each entry has 2–4 subtopics.
     - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
         - Each entry has "learningOutcomesASK" as an array of exactly 3 statements only.
+        - Every learningOutcomesASK statement must begin with "Learners will".
         - Use exactly one statement for each domain tag in this exact order:
             1) first statement ends with "(A)"
             2) second statement ends with "(S)"
@@ -289,9 +290,9 @@ EXACT JSON SCHEMA (fill ALL fields)
       "weekRange": "1-2",
       "mainTopic": "Introduction and Foundations",
             "learningOutcomesASK": [
-                "Learners value collaborative practice and discipline in lab work. (A)",
-                "Learners apply foundational procedures in guided tasks. (S)",
-                "Learners explain the basic concepts of {topic_context or course_title}. (K)"
+                "Learners will value collaborative practice and discipline in lab work. (A)",
+                "Learners will apply foundational procedures in guided tasks. (S)",
+                "Learners will explain the basic concepts of {topic_context or course_title}. (K)"
             ],
       "subtopics": [
                 "History and context of {topic_context or course_title}",
