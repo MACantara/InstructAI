@@ -190,9 +190,12 @@ GLOBAL STRUCTURE RULES
 7. weeklyTopics: cover exactly {duration_weeks} weeks total using weekRange spans (e.g. "1", "1-2", "3-4").
     - Each entry has 2–4 subtopics.
     - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
-    - Each entry has "learningOutcomesASK" as an array of exactly 3 statements only.
-    - Use exactly one statement for each domain tag: one ending in "(A)", one ending in "(S)", and one ending in "(K)".
-    - Do not repeat or duplicate A/S/K tags within the same weekly entry.
+        - Each entry has "learningOutcomesASK" as an array of exactly 3 statements only.
+        - Use exactly one statement for each domain tag in this exact order:
+            1) first statement ends with "(A)"
+            2) second statement ends with "(S)"
+            3) third statement ends with "(K)"
+        - Do not repeat or duplicate A/S/K tags within the same weekly entry.
         - Include dedicated examination weeks using these exact week numbers:
             * Week {prelim_exam_week}: PRELIM EXAMINATION
             * Week {midterm_exam_week}: MIDTERM EXAMINATION
@@ -286,9 +289,9 @@ EXACT JSON SCHEMA (fill ALL fields)
       "weekRange": "1-2",
       "mainTopic": "Introduction and Foundations",
             "learningOutcomesASK": [
-                "Learners explain the basic concepts of {topic_context or course_title}. (K)",
+                "Learners value collaborative practice and discipline in lab work. (A)",
                 "Learners apply foundational procedures in guided tasks. (S)",
-                "Learners value collaborative practice and discipline in lab work. (A)"
+                "Learners explain the basic concepts of {topic_context or course_title}. (K)"
             ],
       "subtopics": [
                 "History and context of {topic_context or course_title}",
@@ -438,8 +441,8 @@ def validate_json_structure(json_data):
                     return False
                 tags.append(match.group(1))
 
-            if sorted(tags) != ['A', 'K', 'S']:
-                logger.error(f"Entry Week {wr}: learningOutcomesASK must contain exactly one A, one S, and one K")
+            if tags != ['A', 'S', 'K']:
+                logger.error(f"Entry Week {wr}: learningOutcomesASK must be in exact order (A), (S), (K)")
                 return False
 
             if not isinstance(entry['learningActivities'], list) or len(entry['learningActivities']) < 1:
