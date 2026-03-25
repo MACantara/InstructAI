@@ -373,11 +373,17 @@ const renderSyllabusRow = (entry, idx, lectureHours, labHours) => {
 const renderLLOCLOMatrix = (topics, clos) => {
     if (!clos.length || !topics.length) return '';
 
-    // Collect all LLOs across all entries
+    // Build matrix rows from generated Learning Outcome (A, S, K) per week.
     const allLLOs = [];
-    topics.forEach(entry => {
-        (entry.lessonLearningOutcomes || []).forEach(llo => {
-            allLLOs.push({ ...llo, weekRange: entry.weekRange });
+    topics.forEach((entry, topicIndex) => {
+        const outcomes = Array.isArray(entry.learningOutcomesASK) ? entry.learningOutcomesASK : [];
+        outcomes.forEach((outcome, outcomeIndex) => {
+            allLLOs.push({
+                id: `LO-${topicIndex + 1}.${outcomeIndex + 1}`,
+                description: outcome,
+                weekRange: entry.weekRange,
+                cloAlignment: Array.isArray(entry.cloAlignment) ? entry.cloAlignment : []
+            });
         });
     });
 
