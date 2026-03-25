@@ -5,17 +5,17 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+<div class="container-fluid py-4 px-3 px-md-4 px-xl-5">
+    <div class="row">
+        <div class="col-12">
             <h1 class="text-center mb-4 text-primary">Syllabus Generator</h1>
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <form id="syllabusForm" onsubmit="return false;">
                         <div class="mb-3">
                             <label for="topic" class="form-label">Enter Course Topic</label>
                             <textarea id="topic" name="topic" class="form-control" rows="3"
-                                placeholder="e.g., Introduction to Machine Learning, Web Development 101, etc." 
+                                placeholder="e.g., Introduction to Machine Learning, Web Development 101, etc."
                                 required></textarea>
                         </div>
                         <button type="submit" id="generate" class="btn btn-primary w-100">
@@ -24,8 +24,8 @@
                     </form>
                 </div>
             </div>
-            
-            <div id="response" class="mt-4"></div>
+
+            <div id="response"></div>
         </div>
     </div>
 </div>

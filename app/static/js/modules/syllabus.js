@@ -74,6 +74,7 @@ export const renderSyllabus = (response) => {
                         <thead class="table-dark">
                             <tr>
                                 <th class="col-week text-center">Week</th>
+                                <th class="col-timeframe">Time Frame</th>
                                 <th class="col-topics">Topics &amp; Subtopics</th>
                                 <th class="col-llo">Lesson Learning<br>Outcomes (LLOs)</th>
                                 <th class="col-clo text-center">CLO</th>
@@ -111,10 +112,16 @@ const renderPLOs = (plos) => {
             <div class="card-body py-3">
                 <div class="row g-2">
                     ${plos.map(plo => `
-                        <div class="col-md-6 col-lg-4">
-                            <div class="d-flex align-items-start">
-                                <span class="badge bg-dark me-2 mt-1 flex-shrink-0 plo-badge">${plo.id}</span>
-                                <span class="small">${plo.description}</span>
+                        <div class="col-md-6">
+                            <div class="border rounded p-2 h-100 bg-light">
+                                <div class="mb-2">
+                                    <label class="form-label form-label-sm small text-muted mb-1">PLO ID</label>
+                                    <input type="text" class="form-control form-control-sm plo-editor-id" value="${plo.id || ''}" readonly>
+                                </div>
+                                <div>
+                                    <label class="form-label form-label-sm small text-muted mb-1">Description (Editable)</label>
+                                    <textarea class="form-control form-control-sm plo-editor-text" rows="2">${plo.description || ''}</textarea>
+                                </div>
                             </div>
                         </div>
                     `).join('')}
@@ -234,6 +241,10 @@ const renderSyllabusRow = (entry, idx) => {
         <tr class="${rowClass}">
             <td class="text-center fw-bold week-cell">
                 <span class="badge bg-secondary week-badge">Week ${entry.weekRange}</span>
+            </td>
+            <td class="timeframe-cell small">
+                <span class="badge bg-primary-subtle text-primary timeframe-item">Lecture: 3 hours</span>
+                <span class="badge bg-success-subtle text-success timeframe-item">Laboratory: 2 hours</span>
             </td>
             <td>
                 <div class="fw-semibold mb-1">${entry.mainTopic}</div>

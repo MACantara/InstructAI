@@ -65,6 +65,7 @@
 
 .syllabus-wrapper {
     font-size: 0.92rem;
+    width: 100%;
 }
 
 .syllabus-table {
@@ -82,14 +83,15 @@
     line-height: 1.3;
 }
 
-/* Column widths — 7 cols now */
+/* Column widths — 8 cols now */
 .syllabus-table .col-week        { width: 6%; }
-.syllabus-table .col-topics      { width: 17%; }
-.syllabus-table .col-llo         { width: 18%; }
+.syllabus-table .col-timeframe   { width: 10%; }
+.syllabus-table .col-topics      { width: 15%; }
+.syllabus-table .col-llo         { width: 16%; }
 .syllabus-table .col-clo         { width: 7%; }
-.syllabus-table .col-kpi         { width: 15%; }
-.syllabus-table .col-activities  { width: 19%; }
-.syllabus-table .col-assessment  { width: 18%; }
+.syllabus-table .col-kpi         { width: 13%; }
+.syllabus-table .col-activities  { width: 16%; }
+.syllabus-table .col-assessment  { width: 17%; }
 
 .syllabus-table td {
     vertical-align: top;
@@ -105,6 +107,15 @@
     font-size: 0.78rem;
     white-space: nowrap;
     padding: 0.35em 0.6em;
+}
+
+.timeframe-cell {
+    min-width: 140px;
+}
+
+.timeframe-item {
+    display: block;
+    margin-bottom: 0.25rem;
 }
 
 .co-badge {
@@ -176,6 +187,14 @@
 .plo-badge {
     font-size: 0.72rem;
     white-space: nowrap;
+}
+
+.plo-editor-id {
+    max-width: 90px;
+}
+
+.plo-editor-text {
+    resize: vertical;
 }
 
 .clo-badge {
