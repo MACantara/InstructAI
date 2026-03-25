@@ -4,14 +4,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const elements = {
         form: document.getElementById('syllabusForm'),
         generateBtn: document.getElementById('generate'),
+        courseTitleInput: document.getElementById('courseTitle'),
+        courseCodeInput: document.getElementById('courseCode'),
+        durationWeeksInput: document.getElementById('durationWeeks'),
+        lectureHoursInput: document.getElementById('lectureHours'),
+        labHoursInput: document.getElementById('labHours'),
         topicInput: document.getElementById('topic'),
         responseArea: document.getElementById('response')
     };
 
     elements.form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const courseTitle = elements.courseTitleInput.value.trim();
+        const courseCode = elements.courseCodeInput.value.trim();
+        const durationWeeks = Number(elements.durationWeeksInput.value) || 18;
+        const lectureHours = Number(elements.lectureHoursInput.value) || 3;
+        const labHours = Number(elements.labHoursInput.value) || 2;
         const topic = elements.topicInput.value.trim();
-        if (!topic) return;
+
+        if (!courseTitle || !courseCode) return;
 
         try {
             elements.generateBtn.disabled = true;
@@ -29,7 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ topic })
+                body: JSON.stringify({
+                    courseTitle,
+                    courseCode,
+                    durationWeeks,
+                    lectureHours,
+                    labHours,
+                    topic
+                })
             });
 
             const data = await response.json();
