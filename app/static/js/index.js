@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
         lectureHoursInput: document.getElementById('lectureHours'),
         labHoursInput: document.getElementById('labHours'),
         topicInput: document.getElementById('topic'),
+        graduateAttributesInput: document.getElementById('graduateAttributesInput'),
+        peosInput: document.getElementById('peosInput'),
+        plosInput: document.getElementById('plosInput'),
         responseArea: document.getElementById('response')
     };
 
@@ -21,8 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const lectureHours = Number(elements.lectureHoursInput.value) || 3;
         const labHours = Number(elements.labHoursInput.value) || 2;
         const topic = elements.topicInput.value.trim();
+        const graduateAttributesInput = elements.graduateAttributesInput.value.trim();
+        const peosInput = elements.peosInput.value.trim();
+        const plosInput = elements.plosInput.value.trim();
 
-        if (!courseTitle || !courseCode) return;
+        if (!courseTitle || !courseCode || !graduateAttributesInput || !peosInput || !plosInput) return;
 
         try {
             elements.generateBtn.disabled = true;
@@ -46,7 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     durationWeeks,
                     lectureHours,
                     labHours,
-                    topic
+                    topic,
+                    graduateAttributesInput,
+                    peosInput,
+                    plosInput
                 })
             });
 

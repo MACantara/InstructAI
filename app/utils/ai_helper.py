@@ -40,7 +40,17 @@ def init_gemini():
         logger.error(f'Failed to initialize Gemini client: {str(e)}')
         raise
 
-def generate_syllabus_prompt(course_title, course_code, duration_weeks, lecture_hours, lab_hours, topic_context):
+def generate_syllabus_prompt(
+    course_title,
+    course_code,
+    duration_weeks,
+    lecture_hours,
+    lab_hours,
+    topic_context,
+    graduate_attributes_input,
+    peos_input,
+    plos_input
+):
     """Generate a structured prompt for university syllabus creation with GA/PEO/PLO/CLO/LLO alignment."""
     prompt = f"""You are an experienced university curriculum designer.
 Your task is to create a comprehensive, university-style syllabus for course '{course_code} - {course_title}'.
@@ -51,16 +61,19 @@ Output ONLY valid JSON with absolutely no extra text, markdown fences, or explan
 ═══════════════════════════════════════════════
 GLOBAL STRUCTURE RULES
 ═══════════════════════════════════════════════
-1. graduateAttributes: include exactly 3 sections:
+1. The following three sections MUST be derived from user-provided content only.
+    Do NOT invent, rewrite, or add new items beyond what the user provided:
+    - graduateAttributes
+    - programEducationalObjectives (PEOs)
+    - programOutcomes (PLOs)
+2. Convert the user input into the required JSON schema as faithfully as possible.
+    Keep wording and intent of user input intact while only normalizing into valid JSON fields.
+3. For graduateAttributes, map items into exactly these sections:
     - Character
     - Competence
     - Commitment to Service
-    Each section must contain 2-3 concise statements.
-2. programEducationalObjectives (PEOs): exactly 3 items (PEO-1 through PEO-3).
-    - Each PEO must have "graduateAttributeAlignment" referencing one or more of:
-      "Character", "Competence", "Commitment to Service".
-3. programOutcomes (PLOs): exactly 5 items (PLO-1 through PLO-5).
-    - Each PLO must include "peoAlignment" referencing 1-2 PEO ids.
+4. For PEOs, include ids and graduateAttributeAlignment based on the user input.
+5. For PLOs, include ids and peoAlignment based on the user input.
 4. courseLearningOutcomes (CLOs): exactly 5 items (CLO-1 through CLO-5).
    - Each CLO must have a "ploAlignment" array referencing 1–3 of the PLO ids.
     - CLO descriptions must be specific to '{topic_context or course_title}' and use Bloom's taxonomy verbs.
@@ -186,6 +199,16 @@ EXACT JSON SCHEMA (fill ALL fields)
     }}
   ]
 }}
+
+USER-PROVIDED CONTENT (USE THIS INSTEAD OF GENERATING NEW GA/PEO/PLO CONTENT)
+Graduate Attributes input:
+{graduate_attributes_input or 'No Graduate Attributes input provided.'}
+
+PEOs input:
+{peos_input or 'No PEO input provided.'}
+
+PLOs input:
+{plos_input or 'No PLO input provided.'}
 
 VERIFICATION CHECKLIST — confirm before outputting:
 1. JSON is syntactically valid (no trailing commas, no comments).
@@ -449,6 +472,9 @@ def generate_response(prompt_data):
         lecture_hours = int(prompt_data.get('lectureHours', 3) or 3)
         lab_hours = int(prompt_data.get('labHours', 2) or 2)
         topic_context = prompt_data.get('topic', '').strip()
+        graduate_attributes_input = prompt_data.get('graduateAttributesInput', '').strip()
+        peos_input = prompt_data.get('peosInput', '').strip()
+        plos_input = prompt_data.get('plosInput', '').strip()
 
         full_prompt = generate_syllabus_prompt(
             course_title,
@@ -456,7 +482,10 @@ def generate_response(prompt_data):
             duration_weeks,
             lecture_hours,
             lab_hours,
-            topic_context
+            topic_context,
+            graduate_attributes_input,
+            peos_input,
+            plos_input
         )
         
         model_id = "gemini-3.1-flash-lite-preview"

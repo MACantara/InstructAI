@@ -204,13 +204,9 @@ const renderPLOs = (plos, peos) => {
                     ${plos.map(plo => `
                         <div class="col-md-6">
                             <div class="border rounded p-2 h-100 bg-light">
-                                <div class="mb-2">
-                                    <label class="form-label form-label-sm small text-muted mb-1">PLO ID</label>
-                                    <input type="text" class="form-control form-control-sm plo-editor-id" value="${plo.id || ''}" readonly>
-                                </div>
-                                <div>
-                                    <label class="form-label form-label-sm small text-muted mb-1">Description (Editable)</label>
-                                    <textarea class="form-control form-control-sm plo-editor-text" rows="2">${plo.description || ''}</textarea>
+                                <div class="d-flex align-items-start mb-1">
+                                    <span class="badge bg-dark me-2 mt-1 flex-shrink-0">${plo.id || 'PLO'}</span>
+                                    <span class="small">${plo.description || '—'}</span>
                                 </div>
                                 <div class="mt-2">
                                     ${(plo.peoAlignment || [])
