@@ -19,10 +19,12 @@ def trigger_error():
 def generate():
     try:
         data = request.json
-        if not data or 'topic' not in data:
-            return jsonify({'error': 'No topic provided'}), 400
+        if not data or 'courseTitle' not in data or 'courseCode' not in data:
+            return jsonify({'error': 'Course title and course code are required'}), 400
         
-        current_app.logger.info(f'Generating syllabus for topic: {data["topic"]}')
+        current_app.logger.info(
+            f'Generating syllabus for course: {data["courseCode"]} - {data["courseTitle"]}'
+        )
         response = generate_response(data)
         return jsonify({'response': response})
     
