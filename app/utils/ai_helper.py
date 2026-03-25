@@ -40,6 +40,101 @@ def init_gemini():
         logger.error(f'Failed to initialize Gemini client: {str(e)}')
         raise
 
+def normalize_manual_alignment_data(prompt_data):
+    """Normalize structured GA/PEO/PLO input from the frontend alignment editors."""
+    ga_input = prompt_data.get('graduateAttributesInput')
+    peos_input = prompt_data.get('peosInput')
+    plos_input = prompt_data.get('plosInput')
+
+    if not isinstance(ga_input, dict):
+        ga_input = {}
+    if not isinstance(peos_input, list):
+        peos_input = []
+    if not isinstance(plos_input, list):
+        plos_input = []
+
+    ga_sections = {
+        'Character': [],
+        'Competence': [],
+        'Commitment to Service': []
+    }
+    ga_id_to_section = {}
+
+    for item in ga_input.get('items', []):
+        if not isinstance(item, dict):
+            continue
+        section = item.get('section')
+        ga_id = str(item.get('id', '')).strip()
+        description = str(item.get('description', '')).strip()
+
+        if section in ga_sections and description:
+            ga_sections[section].append(description)
+        if section in ga_sections and ga_id:
+            ga_id_to_section[ga_id] = section
+
+    if not any(ga_sections.values()):
+        fallback_sections = ga_input.get('sections', {})
+        if isinstance(fallback_sections, dict):
+            for section in ga_sections:
+                values = fallback_sections.get(section, [])
+                if isinstance(values, list):
+                    ga_sections[section] = [str(v).strip() for v in values if str(v).strip()]
+
+    normalized_peos = []
+    for idx, peo in enumerate(peos_input, start=1):
+        if not isinstance(peo, dict):
+            continue
+        peo_id = str(peo.get('id', f'PEO-{idx}')).strip() or f'PEO-{idx}'
+        description = str(peo.get('description', '')).strip()
+        aligned_ga_ids = peo.get('graduateAttributeAlignment', [])
+        if not isinstance(aligned_ga_ids, list):
+            aligned_ga_ids = []
+
+        aligned_sections = []
+        for ga_id in aligned_ga_ids:
+            section = ga_id_to_section.get(str(ga_id).strip())
+            if section and section not in aligned_sections:
+                aligned_sections.append(section)
+
+        if description:
+            normalized_peos.append({
+                'id': peo_id,
+                'description': description,
+                'graduateAttributeAlignment': aligned_sections
+            })
+
+    valid_peo_ids = {peo['id'] for peo in normalized_peos}
+    normalized_plos = []
+    for idx, plo in enumerate(plos_input, start=1):
+        if not isinstance(plo, dict):
+            continue
+        plo_id = str(plo.get('id', f'PLO-{idx}')).strip() or f'PLO-{idx}'
+        description = str(plo.get('description', '')).strip()
+        peo_alignment = plo.get('peoAlignment', [])
+        if not isinstance(peo_alignment, list):
+            peo_alignment = []
+
+        filtered_alignment = [
+            str(peo_id).strip()
+            for peo_id in peo_alignment
+            if str(peo_id).strip() in valid_peo_ids
+        ]
+
+        if description:
+            normalized_plos.append({
+                'id': plo_id,
+                'description': description,
+                'peoAlignment': filtered_alignment
+            })
+
+    manual_data = {
+        'graduateAttributes': ga_sections,
+        'programEducationalObjectives': normalized_peos,
+        'programOutcomes': normalized_plos
+    }
+
+    return manual_data
+
 def generate_syllabus_prompt(
     course_title,
     course_code,
@@ -47,9 +142,7 @@ def generate_syllabus_prompt(
     lecture_hours,
     lab_hours,
     topic_context,
-    graduate_attributes_input,
-    peos_input,
-    plos_input
+    manual_alignment_json
 ):
     """Generate a structured prompt for university syllabus creation with GA/PEO/PLO/CLO/LLO alignment."""
     prompt = f"""You are an experienced university curriculum designer.
@@ -74,10 +167,10 @@ GLOBAL STRUCTURE RULES
     - Commitment to Service
 4. For PEOs, include ids and graduateAttributeAlignment based on the user input.
 5. For PLOs, include ids and peoAlignment based on the user input.
-4. courseLearningOutcomes (CLOs): exactly 5 items (CLO-1 through CLO-5).
+6. courseLearningOutcomes (CLOs): exactly 5 items (CLO-1 through CLO-5).
    - Each CLO must have a "ploAlignment" array referencing 1–3 of the PLO ids.
     - CLO descriptions must be specific to '{topic_context or course_title}' and use Bloom's taxonomy verbs.
-5. weeklyTopics: cover exactly {duration_weeks} weeks total using weekRange spans (e.g. "1", "1-2", "3-4").
+7. weeklyTopics: cover exactly {duration_weeks} weeks total using weekRange spans (e.g. "1", "1-2", "3-4").
    - Each entry has 2–4 subtopics.
    - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
    - Each entry has a "lessonLearningOutcomes" array with 2–3 LLO objects.
@@ -201,14 +294,7 @@ EXACT JSON SCHEMA (fill ALL fields)
 }}
 
 USER-PROVIDED CONTENT (USE THIS INSTEAD OF GENERATING NEW GA/PEO/PLO CONTENT)
-Graduate Attributes input:
-{graduate_attributes_input or 'No Graduate Attributes input provided.'}
-
-PEOs input:
-{peos_input or 'No PEO input provided.'}
-
-PLOs input:
-{plos_input or 'No PLO input provided.'}
+{manual_alignment_json}
 
 VERIFICATION CHECKLIST — confirm before outputting:
 1. JSON is syntactically valid (no trailing commas, no comments).
@@ -472,9 +558,9 @@ def generate_response(prompt_data):
         lecture_hours = int(prompt_data.get('lectureHours', 3) or 3)
         lab_hours = int(prompt_data.get('labHours', 2) or 2)
         topic_context = prompt_data.get('topic', '').strip()
-        graduate_attributes_input = prompt_data.get('graduateAttributesInput', '').strip()
-        peos_input = prompt_data.get('peosInput', '').strip()
-        plos_input = prompt_data.get('plosInput', '').strip()
+
+        manual_alignment_data = normalize_manual_alignment_data(prompt_data)
+        manual_alignment_json = json.dumps(manual_alignment_data, ensure_ascii=True, indent=2)
 
         full_prompt = generate_syllabus_prompt(
             course_title,
@@ -483,9 +569,7 @@ def generate_response(prompt_data):
             lecture_hours,
             lab_hours,
             topic_context,
-            graduate_attributes_input,
-            peos_input,
-            plos_input
+            manual_alignment_json
         )
         
         model_id = "gemini-3.1-flash-lite-preview"
@@ -525,6 +609,11 @@ def generate_response(prompt_data):
 
             # Parse and validate JSON
             json_data = json.loads(json_str)
+
+            # Enforce manual GA/PEO/PLO content from the input editor.
+            json_data['graduateAttributes'] = manual_alignment_data['graduateAttributes']
+            json_data['programEducationalObjectives'] = manual_alignment_data['programEducationalObjectives']
+            json_data['programOutcomes'] = manual_alignment_data['programOutcomes']
             
             if not validate_json_structure(json_data):
                 logger.warning('Invalid JSON structure, falling back to raw text')
