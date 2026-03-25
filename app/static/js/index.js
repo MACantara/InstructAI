@@ -2,109 +2,154 @@ import { renderSyllabus } from './modules/syllabus.js';
 
 const missionKeywords = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-const graduateAttributeRows = [
+let graduateAttributeRows = [
     {
         id: 'GA1',
         section: 'Character',
-        description: 'Graduates demonstrate a deep faith in God, embodying professional, humanistic, and altruistic values in their personal and professional lives.'
+        description: 'Graduates demonstrate a deep faith in God, embodying professional, humanistic, and altruistic values in their personal and professional lives.',
+        missionKeywordAlignment: ['B', 'C', 'F']
     },
     {
         id: 'GA2',
         section: 'Character',
-        description: 'Graduates serve as Helpers of God, dedicating their knowledge and skills to the betterment of others.'
+        description: 'Graduates serve as Helpers of God, dedicating their knowledge and skills to the betterment of others.',
+        missionKeywordAlignment: ['C', 'D', 'F']
     },
     {
         id: 'GA3',
         section: 'Character',
-        description: 'Graduates exemplify servant leadership, guiding others with integrity, humility, and a commitment to the common good.'
+        description: 'Graduates exemplify servant leadership, guiding others with integrity, humility, and a commitment to the common good.',
+        missionKeywordAlignment: ['A', 'D', 'F']
     },
     {
         id: 'GA4',
         section: 'Character',
-        description: 'Graduates uphold ethical responsibility in both physical and digital environments, practicing responsible citizenship and promoting positive engagement and interactions.'
+        description: 'Graduates uphold ethical responsibility in both physical and digital environments, practicing responsible citizenship and promoting positive engagement and interactions.',
+        missionKeywordAlignment: ['A', 'D', 'E']
     },
     {
         id: 'GA5',
         section: 'Competence',
-        description: 'Graduates communicate effectively across diverse contexts, demonstrating clarity, coherence, and cultural sensitivity.'
+        description: 'Graduates communicate effectively across diverse contexts, demonstrating clarity, coherence, and cultural sensitivity.',
+        missionKeywordAlignment: ['A', 'B', 'C', 'D', 'E', 'F']
     },
     {
         id: 'GA6',
         section: 'Competence',
-        description: 'Graduates apply critical and creative thinking to solve complex problems and innovate in their respective fields.'
+        description: 'Graduates apply critical and creative thinking to solve complex problems and innovate in their respective fields.',
+        missionKeywordAlignment: ['B', 'E', 'F']
     },
     {
         id: 'GA7',
         section: 'Competence',
-        description: 'Graduates exhibit competence and excellence in their professional practice, continuously striving for high standards of performance.'
+        description: 'Graduates exhibit competence and excellence in their professional practice, continuously striving for high standards of performance.',
+        missionKeywordAlignment: ['A', 'C', 'D', 'E']
     },
     {
         id: 'GA8',
         section: 'Competence',
-        description: 'Graduates embrace lifelong learning, engage in reflective practice, and contribute to research and innovation for societal advancement.'
+        description: 'Graduates embrace lifelong learning, engage in reflective practice, and contribute to research and innovation for societal advancement.',
+        missionKeywordAlignment: ['A', 'C', 'D']
     },
     {
         id: 'GA9',
         section: 'Commitment to Service',
-        description: 'Graduates actively contribute to nation-building by engaging in meaningful service and leadership roles in their communities.'
+        description: 'Graduates actively contribute to nation-building by engaging in meaningful service and leadership roles in their communities.',
+        missionKeywordAlignment: ['A', 'B', 'C', 'D', 'E', 'F']
     },
     {
         id: 'GA10',
         section: 'Commitment to Service',
-        description: 'Graduates advocate for environmental sustainability, integrating ecological consciousness into their decisions and actions.'
+        description: 'Graduates advocate for environmental sustainability, integrating ecological consciousness into their decisions and actions.',
+        missionKeywordAlignment: ['C', 'F']
     },
     {
         id: 'GA11',
         section: 'Commitment to Service',
-        description: 'Graduates collaborate effectively in diverse teams, demonstrating commitment, adaptability and teamwork in achieving shared goals.'
+        description: 'Graduates collaborate effectively in diverse teams, demonstrating commitment, adaptability and teamwork in achieving shared goals.',
+        missionKeywordAlignment: ['A', 'B', 'E']
     }
 ];
 
-const peoRows = [
+let peoRows = [
     {
         id: 'PEO-1',
-        description: 'Technical Mastery and Innovation: Graduates will demonstrate strong technical competence and creative problem-solving skills in designing, implementing, and managing IT systems that address real-world challenges in organizations and communities.'
+        description: 'Technical Mastery and Innovation: Graduates will demonstrate strong technical competence and creative problem-solving skills in designing, implementing, and managing IT systems that address real-world challenges in organizations and communities.',
+        graduateAttributeAlignment: ['GA5', 'GA6', 'GA7', 'GA8']
     },
     {
         id: 'PEO-2',
-        description: 'Professionalism, Leadership, and Ethics: Graduates will exemplify ethical leadership, professionalism, and collaborative engagement in multidisciplinary IT projects, ensuring adherence to legal, social, and organizational standards.'
+        description: 'Professionalism, Leadership, and Ethics: Graduates will exemplify ethical leadership, professionalism, and collaborative engagement in multidisciplinary IT projects, ensuring adherence to legal, social, and organizational standards.',
+        graduateAttributeAlignment: ['GA1', 'GA2', 'GA3', 'GA4', 'GA5', 'GA9', 'GA10', 'GA11']
     },
     {
         id: 'PEO-3',
-        description: 'Lifelong Learning and Global Adaptability: Graduates will pursue lifelong learning and continuous skill enhancement to remain responsive to evolving technologies, industry demands, and global IT trends.'
+        description: 'Lifelong Learning and Global Adaptability: Graduates will pursue lifelong learning and continuous skill enhancement to remain responsive to evolving technologies, industry demands, and global IT trends.',
+        graduateAttributeAlignment: ['GA6', 'GA7', 'GA8', 'GA9', 'GA10', 'GA11']
     },
     {
         id: 'PEO-4',
-        description: 'Societal Contribution and Sustainable Development: Graduates will contribute to inclusive and sustainable digital transformation by developing IT solutions that address societal, environmental, and organizational needs across diverse sectors.'
+        description: 'Societal Contribution and Sustainable Development: Graduates will contribute to inclusive and sustainable digital transformation by developing IT solutions that address societal, environmental, and organizational needs across diverse sectors.',
+        graduateAttributeAlignment: ['GA1', 'GA2', 'GA3', 'GA4', 'GA5', 'GA6', 'GA7', 'GA8', 'GA9', 'GA10', 'GA11']
     }
 ];
 
-const ploRows = [
+let ploRows = [
     {
         id: 'PLO-1',
-        description: 'Computing Knowledge and Problem Solving: Apply knowledge of computing, science, and mathematics to analyze, design, and solve complex IT problems in various domains.'
+        description: 'Computing Knowledge and Problem Solving: Apply knowledge of computing, science, and mathematics to analyze, design, and solve complex IT problems in various domains.',
+        peoAlignment: ['PEO-1']
     },
     {
         id: 'PLO-2',
-        description: 'IT Systems Design and Integration: Design, implement, and optimize IT-based solutions that meet user requirements, industry standards, and sustainability goals.'
+        description: 'IT Systems Design and Integration: Design, implement, and optimize IT-based solutions that meet user requirements, industry standards, and sustainability goals.',
+        peoAlignment: ['PEO-1', 'PEO-2', 'PEO-3']
     },
     {
         id: 'PLO-3',
-        description: 'Innovative and Interactive IT Applications: Develop creative, immersive, and user-centered digital systems using advanced tools, emerging technologies, and programming environments.'
+        description: 'Innovative and Interactive IT Applications: Develop creative, immersive, and user-centered digital systems using advanced tools, emerging technologies, and programming environments.',
+        peoAlignment: ['PEO-1', 'PEO-4']
     },
     {
         id: 'PLO-4',
-        description: 'Communication and Collaboration: Communicate effectively in oral, written, and digital forms and work productively in diverse teams to deliver quality IT solutions.'
+        description: 'Communication and Collaboration: Communicate effectively in oral, written, and digital forms and work productively in diverse teams to deliver quality IT solutions.',
+        peoAlignment: ['PEO-2']
     },
     {
         id: 'PLO-5',
-        description: 'Ethics, Legal, and Social Responsibility: Uphold ethical, legal, and professional standards in IT practice, ensuring data privacy, security, and inclusivity while addressing organizational and societal challenges.'
+        description: 'Ethics, Legal, and Social Responsibility: Uphold ethical, legal, and professional standards in IT practice, ensuring data privacy, security, and inclusivity while addressing organizational and societal challenges.',
+        peoAlignment: ['PEO-2']
     },
     {
         id: 'PLO-6',
-        description: 'Lifelong Learning and Professional Development: Engage in lifelong learning to stay current with advancements in information technology and to support professional growth.'
+        description: 'Lifelong Learning and Professional Development: Engage in lifelong learning to stay current with advancements in information technology and to support professional growth.',
+        peoAlignment: ['PEO-2', 'PEO-3']
     }
 ];
+
+const nextGaId = () => {
+    const maxId = graduateAttributeRows.reduce((max, row) => {
+        const num = Number(String(row.id).replace('GA', ''));
+        return Number.isFinite(num) ? Math.max(max, num) : max;
+    }, 0);
+    return `GA${maxId + 1}`;
+};
+
+const nextPeoId = () => {
+    const maxId = peoRows.reduce((max, row) => {
+        const num = Number(String(row.id).replace('PEO-', ''));
+        return Number.isFinite(num) ? Math.max(max, num) : max;
+    }, 0);
+    return `PEO-${maxId + 1}`;
+};
+
+const nextPloId = () => {
+    const maxId = ploRows.reduce((max, row) => {
+        const num = Number(String(row.id).replace('PLO-', ''));
+        return Number.isFinite(num) ? Math.max(max, num) : max;
+    }, 0);
+    return `PLO-${maxId + 1}`;
+};
 
 const renderGraduateAttributesEditor = (container) => {
     const sectionOrder = ['Character', 'Competence', 'Commitment to Service'];
@@ -112,7 +157,10 @@ const renderGraduateAttributesEditor = (container) => {
         const sectionRows = graduateAttributeRows.filter((row) => row.section === section);
         return `
             <tr class="ga-section-row">
-                <th colspan="8">${section.toUpperCase()}</th>
+                <th colspan="9" class="d-flex justify-content-between align-items-center">
+                    <span>${section.toUpperCase()}</span>
+                    <button type="button" class="btn btn-sm btn-outline-success ga-add-btn" data-section="${section}">Add Row</button>
+                </th>
             </tr>
             ${sectionRows.map((row) => `
                 <tr>
@@ -122,9 +170,12 @@ const renderGraduateAttributesEditor = (container) => {
                     </td>
                     ${missionKeywords.map((keyword) => `
                         <td class="text-center">
-                            <input type="checkbox" class="form-check-input ga-mission-checkbox" data-ga-id="${row.id}" data-keyword="${keyword}">
+                            <input type="checkbox" class="form-check-input ga-mission-checkbox" data-ga-id="${row.id}" data-keyword="${keyword}" ${row.missionKeywordAlignment?.includes(keyword) ? 'checked' : ''}>
                         </td>
                     `).join('')}
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger ga-remove-btn" data-ga-id="${row.id}">Remove</button>
+                    </td>
                 </tr>
             `).join('')}
         `;
@@ -138,6 +189,7 @@ const renderGraduateAttributesEditor = (container) => {
                         <th class="ga-id-col">ID</th>
                         <th class="ga-text-col">Graduate Attribute Text</th>
                         ${missionKeywords.map((keyword) => `<th class="text-center keyword-col">${keyword}</th>`).join('')}
+                        <th class="action-col text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>${rowsHtml}</tbody>
@@ -168,13 +220,19 @@ const renderPeosEditor = (container) => {
                             </td>
                             ${gaIds.map((gaId) => `
                                 <td class="text-center">
-                                    <input type="checkbox" class="form-check-input peo-ga-checkbox" data-peo-id="${row.id}" data-ga-id="${gaId}">
+                                    <input type="checkbox" class="form-check-input peo-ga-checkbox" data-peo-id="${row.id}" data-ga-id="${gaId}" ${row.graduateAttributeAlignment?.includes(gaId) ? 'checked' : ''}>
                                 </td>
                             `).join('')}
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger peo-remove-btn" data-peo-id="${row.id}">Remove</button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
+        </div>
+        <div class="mt-2 text-end">
+            <button type="button" class="btn btn-sm btn-outline-warning" id="peoAddBtn">Add PEO</button>
         </div>
     `;
 };
@@ -190,6 +248,7 @@ const renderPlosEditor = (container) => {
                         <th class="plo-id-col">PLO</th>
                         <th class="plo-text-col">Program Learning Outcome Text</th>
                         ${peoIds.map((id) => `<th class="text-center align-col">${id}</th>`).join('')}
+                        <th class="action-col text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -201,13 +260,19 @@ const renderPlosEditor = (container) => {
                             </td>
                             ${peoIds.map((peoId) => `
                                 <td class="text-center">
-                                    <input type="checkbox" class="form-check-input plo-peo-checkbox" data-plo-id="${row.id}" data-peo-id="${peoId}">
+                                    <input type="checkbox" class="form-check-input plo-peo-checkbox" data-plo-id="${row.id}" data-peo-id="${peoId}" ${row.peoAlignment?.includes(peoId) ? 'checked' : ''}>
                                 </td>
                             `).join('')}
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger plo-remove-btn" data-plo-id="${row.id}">Remove</button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
+        </div>
+        <div class="mt-2 text-end">
+            <button type="button" class="btn btn-sm btn-outline-info" id="ploAddBtn">Add PLO</button>
         </div>
     `;
 };
@@ -289,6 +354,89 @@ document.addEventListener('DOMContentLoaded', () => {
     renderGraduateAttributesEditor(elements.gaEditor);
     renderPeosEditor(elements.peoEditor);
     renderPlosEditor(elements.ploEditor);
+
+    elements.gaEditor.addEventListener('click', (event) => {
+        const addBtn = event.target.closest('.ga-add-btn');
+        if (addBtn) {
+            const section = addBtn.dataset.section;
+            graduateAttributeRows.push({
+                id: nextGaId(),
+                section,
+                description: '',
+                missionKeywordAlignment: []
+            });
+            renderGraduateAttributesEditor(elements.gaEditor);
+            renderPeosEditor(elements.peoEditor);
+            return;
+        }
+
+        const removeBtn = event.target.closest('.ga-remove-btn');
+        if (removeBtn) {
+            const gaId = removeBtn.dataset.gaId;
+            if (graduateAttributeRows.length <= 1) return;
+            graduateAttributeRows = graduateAttributeRows.filter((row) => row.id !== gaId);
+
+            // Remove stale GA alignments from PEO rows.
+            peoRows = peoRows.map((row) => ({
+                ...row,
+                graduateAttributeAlignment: (row.graduateAttributeAlignment || []).filter((id) => id !== gaId)
+            }));
+
+            renderGraduateAttributesEditor(elements.gaEditor);
+            renderPeosEditor(elements.peoEditor);
+        }
+    });
+
+    elements.peoEditor.addEventListener('click', (event) => {
+        const addBtn = event.target.closest('#peoAddBtn');
+        if (addBtn) {
+            peoRows.push({
+                id: nextPeoId(),
+                description: '',
+                graduateAttributeAlignment: []
+            });
+            renderPeosEditor(elements.peoEditor);
+            renderPlosEditor(elements.ploEditor);
+            return;
+        }
+
+        const removeBtn = event.target.closest('.peo-remove-btn');
+        if (removeBtn) {
+            const peoId = removeBtn.dataset.peoId;
+            if (peoRows.length <= 1) return;
+            peoRows = peoRows.filter((row) => row.id !== peoId);
+
+            // Remove stale PEO alignments from PLO rows.
+            ploRows = ploRows.map((row) => ({
+                ...row,
+                peoAlignment: (row.peoAlignment || []).filter((id) => id !== peoId)
+            }));
+
+            renderPeosEditor(elements.peoEditor);
+            renderPlosEditor(elements.ploEditor);
+        }
+    });
+
+    elements.ploEditor.addEventListener('click', (event) => {
+        const addBtn = event.target.closest('#ploAddBtn');
+        if (addBtn) {
+            ploRows.push({
+                id: nextPloId(),
+                description: '',
+                peoAlignment: []
+            });
+            renderPlosEditor(elements.ploEditor);
+            return;
+        }
+
+        const removeBtn = event.target.closest('.plo-remove-btn');
+        if (removeBtn) {
+            const ploId = removeBtn.dataset.ploId;
+            if (ploRows.length <= 1) return;
+            ploRows = ploRows.filter((row) => row.id !== ploId);
+            renderPlosEditor(elements.ploEditor);
+        }
+    });
 
     elements.form.addEventListener('submit', async (e) => {
         e.preventDefault();
