@@ -4,6 +4,7 @@ from flask import current_app
 import logging
 import json
 from datetime import datetime
+import re
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
@@ -189,7 +190,9 @@ GLOBAL STRUCTURE RULES
 7. weeklyTopics: cover exactly {duration_weeks} weeks total using weekRange spans (e.g. "1", "1-2", "3-4").
     - Each entry has 2–4 subtopics.
     - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
-    - Each entry has "learningOutcomesASK" as an array of 2–4 statements and each statement ends with "(A)", "(S)", or "(K)".
+    - Each entry has "learningOutcomesASK" as an array of exactly 3 statements only.
+    - Use exactly one statement for each domain tag: one ending in "(A)", one ending in "(S)", and one ending in "(K)".
+    - Do not repeat or duplicate A/S/K tags within the same weekly entry.
         - Include dedicated examination weeks using these exact week numbers:
             * Week {prelim_exam_week}: PRELIM EXAMINATION
             * Week {midterm_exam_week}: MIDTERM EXAMINATION
@@ -419,8 +422,24 @@ def validate_json_structure(json_data):
                 logger.error(f"Entry Week {wr}: cloAlignment must be a non-empty list")
                 return False
 
-            if not isinstance(entry['learningOutcomesASK'], list) or len(entry['learningOutcomesASK']) < 1:
-                logger.error(f"Entry Week {wr}: learningOutcomesASK must be a non-empty list")
+            outcomes = entry['learningOutcomesASK']
+            if not isinstance(outcomes, list) or len(outcomes) != 3:
+                logger.error(f"Entry Week {wr}: learningOutcomesASK must contain exactly 3 items (A, S, K)")
+                return False
+
+            tags = []
+            for outcome in outcomes:
+                if not isinstance(outcome, str):
+                    logger.error(f"Entry Week {wr}: each learningOutcomesASK item must be a string")
+                    return False
+                match = re.search(r'\(([ASK])\)\s*$', outcome.strip())
+                if not match:
+                    logger.error(f"Entry Week {wr}: learning outcome must end with (A), (S), or (K)")
+                    return False
+                tags.append(match.group(1))
+
+            if sorted(tags) != ['A', 'K', 'S']:
+                logger.error(f"Entry Week {wr}: learningOutcomesASK must contain exactly one A, one S, and one K")
                 return False
 
             if not isinstance(entry['learningActivities'], list) or len(entry['learningActivities']) < 1:
