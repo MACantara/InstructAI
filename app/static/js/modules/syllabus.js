@@ -63,6 +63,9 @@ export const renderSyllabus = (response) => {
             <!-- Course Learning Outcomes + CLO-PLO Matrix -->
             ${renderCLOs(clos, plos)}
 
+            <!-- LLO-CLO Alignment Matrix -->
+            ${renderLLOCLOMatrix(topics, clos)}
+
             <!-- Course Schedule Table -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-primary text-white py-3">
@@ -86,9 +89,6 @@ export const renderSyllabus = (response) => {
                     </table>
                 </div>
             </div>
-
-            <!-- LLO-CLO Alignment Matrix -->
-            ${renderLLOCLOMatrix(topics, clos)}
 
         </div>
     `;
