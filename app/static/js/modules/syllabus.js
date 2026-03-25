@@ -72,14 +72,12 @@ export const renderSyllabus = (response) => {
                     <table class="table table-bordered syllabus-table mb-0 align-top">
                         <thead class="table-dark">
                             <tr>
-                                <th class="col-week text-center">Week</th>
+                                <th class="col-learning-outcomes">Learning Outcome (A, S, K)</th>
+                                <th class="col-topics">Topic</th>
                                 <th class="col-timeframe">Time Frame</th>
-                                <th class="col-topics">Topics &amp; Subtopics</th>
-                                <th class="col-llo">Lesson Learning<br>Outcomes (LLOs)</th>
-                                <th class="col-clo text-center">CLO</th>
-                                <th class="col-kpi">Key Performance<br>Indicator (KPI)</th>
-                                <th class="col-activities">Learning Activities /<br>Performance Task</th>
-                                <th class="col-assessment">Assessment Strategies &amp; Tools /<br>Results &amp; Evidence</th>
+                                <th class="col-activities">Learning Activity / Performance Task</th>
+                                <th class="col-assessment">Assessment Strategy and Tool</th>
+                                <th class="col-results">Result &amp; Evidence</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -318,26 +316,31 @@ const renderCLOs = (clos, plos) => {
 const renderSyllabusRow = (entry, idx, lectureHours, labHours) => {
     const rowClass = idx % 2 === 0 ? '' : 'table-light';
 
-    const subtopicsHtml = (entry.subtopics || []).length
-        ? `<ul class="mb-0 ps-3 subtopics-list">${entry.subtopics.map(s => `<li>${s}</li>`).join('')}</ul>`
-        : '';
+    const weekLabel = entry.weekRange ? `WEEK ${entry.weekRange}` : `WEEK ${idx + 1}`;
 
-    const lloHtml = (entry.lessonLearningOutcomes || []).map(llo => {
-        const cloBadges = (llo.cloAlignment || [])
-            .map(c => `<span class="badge bg-primary llo-clo-badge">${c}</span>`)
-            .join('');
-        return `<div class="llo-item mb-1">
-            <span class="llo-id">${llo.id}</span>
-            <span class="small text-muted">${llo.description}</span>
-            <div class="mt-1">${cloBadges}</div>
-        </div>`;
-    }).join('') || '—';
+    const learningOutcomes = Array.isArray(entry.learningOutcomesASK) && entry.learningOutcomesASK.length
+        ? entry.learningOutcomesASK
+        : (entry.lessonLearningOutcomes || []).map(llo => llo.description).filter(Boolean);
 
-    const cloHtml = (entry.cloAlignment || []).map(c =>
-        `<span class="badge bg-primary co-badge">${c}</span>`
-    ).join('') || '—';
+    const learningOutcomesHtml = learningOutcomes.length
+        ? `<ul class="mb-0 ps-3">${learningOutcomes.map(item => `<li>${item}</li>`).join('')}</ul>`
+        : '—';
 
-    const activitiesHtml = (entry.learningActivities || []).length
+    const topicHtml = `
+        <div class="fw-semibold mb-1">${entry.mainTopic || '—'}</div>
+        ${(entry.subtopics || []).length
+            ? `<ul class="mb-0 ps-3 subtopics-list">${entry.subtopics.map(s => `<li>${s}</li>`).join('')}</ul>`
+            : ''}
+    `;
+
+    const timeframeItems = [
+        `${lectureHours} Hours`,
+        `${labHours} Hours`
+    ];
+
+    const timeframeHtml = `<ul class="mb-0 ps-3">${timeframeItems.map(t => `<li>${t}</li>`).join('')}</ul>`;
+
+    const learningActivityHtml = (entry.learningActivities || []).length
         ? `<ul class="mb-0 ps-3">${entry.learningActivities.map(a => `<li>${a}</li>`).join('')}</ul>`
         : '—';
 
@@ -345,24 +348,21 @@ const renderSyllabusRow = (entry, idx, lectureHours, labHours) => {
         ? `<ul class="mb-0 ps-3">${entry.assessmentStrategies.map(s => `<li>${s}</li>`).join('')}</ul>`
         : '—';
 
+    const resultEvidenceHtml = (entry.resultEvidence || []).length
+        ? `<ul class="mb-0 ps-3">${entry.resultEvidence.map(r => `<li>${r}</li>`).join('')}</ul>`
+        : '—';
+
     return `
+        <tr class="week-header-row">
+            <td colspan="6" class="fw-bold">${weekLabel}</td>
+        </tr>
         <tr class="${rowClass}">
-            <td class="text-center fw-bold week-cell">
-                <span class="badge bg-secondary week-badge">Week ${entry.weekRange}</span>
-            </td>
-            <td class="timeframe-cell small">
-                <span class="badge bg-primary-subtle text-primary timeframe-item">Lecture: ${lectureHours} hours</span>
-                <span class="badge bg-success-subtle text-success timeframe-item">Laboratory: ${labHours} hours</span>
-            </td>
-            <td>
-                <div class="fw-semibold mb-1">${entry.mainTopic}</div>
-                ${subtopicsHtml}
-            </td>
-            <td class="llo-cell">${lloHtml}</td>
-            <td class="text-center co-cell">${cloHtml}</td>
-            <td class="kpi-cell small">${entry.kpi || '—'}</td>
-            <td class="small">${activitiesHtml}</td>
+            <td class="small">${learningOutcomesHtml}</td>
+            <td>${topicHtml}</td>
+            <td class="timeframe-cell small">${timeframeHtml}</td>
+            <td class="small">${learningActivityHtml}</td>
             <td class="small">${assessmentHtml}</td>
+            <td class="small">${resultEvidenceHtml}</td>
         </tr>
     `;
 };

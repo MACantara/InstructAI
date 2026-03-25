@@ -184,14 +184,15 @@ GLOBAL STRUCTURE RULES
    - Each CLO must have a "ploAlignment" array referencing 1–3 of the PLO ids.
     - CLO descriptions must be specific to '{topic_context or course_title}' and use Bloom's taxonomy verbs.
 7. weeklyTopics: cover exactly {duration_weeks} weeks total using weekRange spans (e.g. "1", "1-2", "3-4").
-   - Each entry has 2–4 subtopics.
-   - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
-   - Each entry has a "lessonLearningOutcomes" array with 2–3 LLO objects.
-     * Each LLO has: "id" (e.g. "LLO-1.1"), "description", and "cloAlignment" (array of 1–2 CLO ids).
-     * LLO ids use the format "LLO-<entryIndex>.<lloIndex>" (both 1-based).
-   - kpi: one measurable sentence starting with an action verb.
-   - learningActivities: 2–4 specific activities.
-   - assessmentStrategies: 2–3 specific tools or methods.
+     - Each entry has 2–4 subtopics.
+     - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
+     - Each entry has "learningOutcomesASK" as an array of 2–4 statements and each statement ends with "(A)", "(S)", or "(K)".
+     - Each entry has a "lessonLearningOutcomes" array with 2–3 LLO objects.
+         * Each LLO has: "id" (e.g. "LLO-1.1"), "description", and "cloAlignment" (array of 1–2 CLO ids).
+         * LLO ids use the format "LLO-<entryIndex>.<lloIndex>" (both 1-based).
+     - learningActivities: 2–4 specific activities.
+     - assessmentStrategies: 2–4 specific tools or methods.
+     - resultEvidence: 1–3 concrete evidence items (e.g., "Graded rubric scores").
 
 ═══════════════════════════════════════════════
 EXACT JSON SCHEMA (fill ALL fields)
@@ -274,6 +275,11 @@ EXACT JSON SCHEMA (fill ALL fields)
     {{
       "weekRange": "1-2",
       "mainTopic": "Introduction and Foundations",
+            "learningOutcomesASK": [
+                "Learners explain the basic concepts of {topic_context or course_title}. (K)",
+                "Learners apply foundational procedures in guided tasks. (S)",
+                "Learners value collaborative practice and discipline in lab work. (A)"
+            ],
       "subtopics": [
                 "History and context of {topic_context or course_title}",
         "Core terminology and conceptual framework",
@@ -301,6 +307,10 @@ EXACT JSON SCHEMA (fill ALL fields)
       "assessmentStrategies": [
         "Terminology quiz (MCQ)",
         "Lab completion checklist and reflection note"
+            ],
+            "resultEvidence": [
+                "Graded quiz results",
+                "Graded rubric scores"
       ]
     }}
   ]
@@ -327,8 +337,8 @@ def validate_json_structure(json_data):
                     'graduateAttributes', 'programEducationalObjectives',
                     'programOutcomes', 'courseLearningOutcomes', 'weeklyTopics']
     course_structure_fields = ['duration', 'format']
-    weekly_topic_fields = ['weekRange', 'mainTopic', 'subtopics', 'cloAlignment',
-                           'lessonLearningOutcomes', 'kpi', 'learningActivities', 'assessmentStrategies']
+    weekly_topic_fields = ['weekRange', 'mainTopic', 'learningOutcomesASK', 'subtopics', 'cloAlignment',
+                           'lessonLearningOutcomes', 'learningActivities', 'assessmentStrategies', 'resultEvidence']
 
     try:
         # Check required top-level fields
@@ -413,6 +423,10 @@ def validate_json_structure(json_data):
                 logger.error(f"Entry Week {wr}: cloAlignment must be a non-empty list")
                 return False
 
+            if not isinstance(entry['learningOutcomesASK'], list) or len(entry['learningOutcomesASK']) < 1:
+                logger.error(f"Entry Week {wr}: learningOutcomesASK must be a non-empty list")
+                return False
+
             if not isinstance(entry['lessonLearningOutcomes'], list) or len(entry['lessonLearningOutcomes']) < 1:
                 logger.error(f"Entry Week {wr}: lessonLearningOutcomes must be a non-empty list")
                 return False
@@ -428,6 +442,10 @@ def validate_json_structure(json_data):
 
             if not isinstance(entry['assessmentStrategies'], list) or len(entry['assessmentStrategies']) < 1:
                 logger.error(f"Entry Week {wr}: assessmentStrategies must be a non-empty list")
+                return False
+
+            if not isinstance(entry['resultEvidence'], list) or len(entry['resultEvidence']) < 1:
+                logger.error(f"Entry Week {wr}: resultEvidence must be a non-empty list")
                 return False
 
         return True
@@ -497,17 +515,20 @@ def format_json_to_markdown(json_data):
 
     # Course Schedule
     markdown += "## Course Schedule\n\n"
-    markdown += "| Week | Main Topic & Subtopics | LLOs | CLO | KPI | Learning Activities | Assessment Strategies |\n"
-    markdown += "|------|----------------------|------|-----|-----|--------------------|-----------------------|\n"
+    markdown += "| Week | Learning Outcome (A,S,K) | Topic | Time Frame | Learning Activity / Performance Task | Assessment Strategy and Tool | Result & Evidence |\n"
+    markdown += "|------|--------------------------|-------|------------|--------------------------------------|------------------------------|------------------|\n"
     for entry in json_data['weeklyTopics']:
+        learning_outcomes = '<br>'.join(f"- {s}" for s in entry.get('learningOutcomesASK', []))
         subtopics = '<br>'.join(f"- {s}" for s in entry['subtopics'])
-        llos = '<br>'.join(
-            f"{l['id']}: {l['description']}" for l in entry.get('lessonLearningOutcomes', [])
+        topic = f"**{entry['mainTopic']}**<br>{subtopics}"
+        timeframe = (
+            f"- {json_data.get('timeFramePerWeek', {}).get('lectureHours', 3)} Hours<br>"
+            f"- {json_data.get('timeFramePerWeek', {}).get('laboratoryHours', 2)} Hours"
         )
-        clo_refs = ', '.join(entry.get('cloAlignment', []))
         activities = '<br>'.join(f"- {a}" for a in entry['learningActivities'])
-        strategies = '<br>'.join(f"- {s}" for s in entry['assessmentStrategies'])
-        markdown += f"| Week {entry['weekRange']} | **{entry['mainTopic']}**<br>{subtopics} | {llos} | {clo_refs} | {entry['kpi']} | {activities} | {strategies} |\n"
+        strategies = '<br>'.join(f"- {s}" for s in entry.get('assessmentStrategies', []))
+        evidence = '<br>'.join(f"- {e}" for e in entry.get('resultEvidence', []))
+        markdown += f"| Week {entry['weekRange']} | {learning_outcomes} | {topic} | {timeframe} | {activities} | {strategies} | {evidence} |\n"
     markdown += "\n"
 
     # LLO-CLO Alignment Matrix
