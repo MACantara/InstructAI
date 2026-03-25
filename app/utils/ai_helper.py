@@ -148,6 +148,113 @@ def build_fixed_timeframe(duration_weeks, lecture_hours, lab_hours):
         }
     }
 
+def _parse_week_range(week_range):
+    """Parse weekRange values like '6' or '5-7' into numeric bounds."""
+    text = str(week_range or '').strip()
+    if not text:
+        return None
+
+    if '-' in text:
+        left, right = text.split('-', 1)
+        if left.strip().isdigit() and right.strip().isdigit():
+            start = int(left.strip())
+            end = int(right.strip())
+            if start <= end:
+                return (start, end)
+            return (end, start)
+
+    if text.isdigit():
+        week = int(text)
+        return (week, week)
+
+    return None
+
+def enforce_exam_weeks(json_data, duration_weeks):
+    """Ensure fixed examination weeks exist as explicit weekly entries."""
+    original_topics = json_data.get('weeklyTopics', [])
+    if not isinstance(original_topics, list):
+        original_topics = []
+
+    clo_ids = [c.get('id') for c in json_data.get('courseLearningOutcomes', []) if c.get('id')]
+    default_clo = clo_ids[:1] if clo_ids else []
+
+    topics_by_week = {}
+    for entry in original_topics:
+        bounds = _parse_week_range(entry.get('weekRange'))
+        if not bounds:
+            continue
+        start, end = bounds
+        for week in range(start, end + 1):
+            if 1 <= week <= duration_weeks and week not in topics_by_week:
+                topics_by_week[week] = entry
+
+    normalized = []
+    for week in range(1, duration_weeks + 1):
+        source = topics_by_week.get(week, {})
+        clo_alignment = source.get('cloAlignment', default_clo)
+        if not isinstance(clo_alignment, list) or not clo_alignment:
+            clo_alignment = default_clo
+
+        normalized.append({
+            'weekRange': str(week),
+            'mainTopic': source.get('mainTopic', 'Topic Development'),
+            'learningOutcomesASK': source.get('learningOutcomesASK') or [
+                'Learners demonstrate expected outcomes for this week. (S)'
+            ],
+            'subtopics': source.get('subtopics') or ['Planned weekly subtopic'],
+            'cloAlignment': clo_alignment,
+            'lessonLearningOutcomes': source.get('lessonLearningOutcomes') or [
+                {
+                    'id': f'LLO-{week}.1',
+                    'description': 'Demonstrate competency for this week.',
+                    'cloAlignment': clo_alignment
+                }
+            ],
+            'learningActivities': source.get('learningActivities') or ['Guided class and laboratory activity'],
+            'assessmentStrategies': source.get('assessmentStrategies') or ['Performance-based assessment'],
+            'resultEvidence': source.get('resultEvidence') or ['Documented assessment result']
+        })
+
+    exam_weeks = {
+        6: 'PRELIM EXAMINATION',
+        12: 'MIDTERM EXAMINATION',
+        18: 'FINAL EXAMINATION'
+    }
+
+    for week, label in exam_weeks.items():
+        if week < 1 or week > duration_weeks:
+            continue
+
+        clo_alignment = normalized[week - 1].get('cloAlignment', default_clo)
+        if not isinstance(clo_alignment, list) or not clo_alignment:
+            clo_alignment = default_clo
+
+        normalized[week - 1] = {
+            'weekRange': str(week),
+            'mainTopic': label,
+            'learningOutcomesASK': [
+                f'Learners demonstrate cumulative learning for {label.lower()}. (S)'
+            ],
+            'subtopics': [label],
+            'cloAlignment': clo_alignment,
+            'lessonLearningOutcomes': [
+                {
+                    'id': f'LLO-{week}.1',
+                    'description': f'Complete requirements for {label.lower()}.',
+                    'cloAlignment': clo_alignment
+                }
+            ],
+            'learningActivities': [label],
+            'assessmentStrategies': [label],
+            'resultEvidence': [
+                'Graded examination paper',
+                'Recorded examination score'
+            ]
+        }
+
+    json_data['weeklyTopics'] = normalized
+    return json_data
+
 def generate_syllabus_prompt(
     course_title,
     course_code,
@@ -193,6 +300,9 @@ GLOBAL STRUCTURE RULES
      - learningActivities: 2–4 specific activities.
      - assessmentStrategies: 2–4 specific tools or methods.
      - resultEvidence: 1–3 concrete evidence items (e.g., "Graded rubric scores").
+    - Week 6 must be PRELIM EXAMINATION.
+    - Week 12 must be MIDTERM EXAMINATION.
+    - Week 18 must be FINAL EXAMINATION.
 
 ═══════════════════════════════════════════════
 EXACT JSON SCHEMA (fill ALL fields)
@@ -651,6 +761,7 @@ def generate_response(prompt_data):
             json_data['programOutcomes'] = manual_alignment_data['programOutcomes']
             json_data['courseStructure'] = fixed_timeframe['courseStructure']
             json_data['timeFramePerWeek'] = fixed_timeframe['timeFramePerWeek']
+            json_data = enforce_exam_weeks(json_data, duration_weeks)
             
             if not validate_json_structure(json_data):
                 logger.warning('Invalid JSON structure, falling back to raw text')
