@@ -40,21 +40,31 @@ def init_gemini():
         logger.error(f'Failed to initialize Gemini client: {str(e)}')
         raise
 
-def generate_syllabus_prompt(topic):
-    """Generate a structured prompt for university syllabus creation with CLO-PLO and LLO-CLO alignment"""
+def generate_syllabus_prompt(course_title, course_code, duration_weeks, lecture_hours, lab_hours, topic_context):
+    """Generate a structured prompt for university syllabus creation with GA/PEO/PLO/CLO/LLO alignment."""
     prompt = f"""You are an experienced university curriculum designer.
-Your task is to create a comprehensive, university-style syllabus for the course: '{topic}'.
+Your task is to create a comprehensive, university-style syllabus for course '{course_code} - {course_title}'.
+Topic context: '{topic_context or course_title}'.
 
 Output ONLY valid JSON with absolutely no extra text, markdown fences, or explanations.
 
 ═══════════════════════════════════════════════
 GLOBAL STRUCTURE RULES
 ═══════════════════════════════════════════════
-1. programOutcomes: exactly 5 items (PLO-1 through PLO-5). Use realistic, programme-level statements.
-2. courseLearningOutcomes (CLOs): exactly 5 items (CLO-1 through CLO-5).
+1. graduateAttributes: include exactly 3 sections:
+    - Character
+    - Competence
+    - Commitment to Service
+    Each section must contain 2-3 concise statements.
+2. programEducationalObjectives (PEOs): exactly 3 items (PEO-1 through PEO-3).
+    - Each PEO must have "graduateAttributeAlignment" referencing one or more of:
+      "Character", "Competence", "Commitment to Service".
+3. programOutcomes (PLOs): exactly 5 items (PLO-1 through PLO-5).
+    - Each PLO must include "peoAlignment" referencing 1-2 PEO ids.
+4. courseLearningOutcomes (CLOs): exactly 5 items (CLO-1 through CLO-5).
    - Each CLO must have a "ploAlignment" array referencing 1–3 of the PLO ids.
-   - CLO descriptions must be specific to '{topic}' and use Bloom's taxonomy verbs.
-3. weeklyTopics: cover exactly 18 weeks total using weekRange spans (e.g. "1", "1-2", "3-4").
+    - CLO descriptions must be specific to '{topic_context or course_title}' and use Bloom's taxonomy verbs.
+5. weeklyTopics: cover exactly {duration_weeks} weeks total using weekRange spans (e.g. "1", "1-2", "3-4").
    - Each entry has 2–4 subtopics.
    - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
    - Each entry has a "lessonLearningOutcomes" array with 2–3 LLO objects.
@@ -68,44 +78,76 @@ GLOBAL STRUCTURE RULES
 EXACT JSON SCHEMA (fill ALL fields)
 ═══════════════════════════════════════════════
 {{
-  "title": "Full official course title",
+    "title": "{course_title}",
+    "courseCode": "{course_code}",
   "courseDescription": "2–3 sentence overview.",
   "courseStructure": {{
-    "duration": "18 weeks",
-    "format": "e.g., 3-hour lecture + 2-hour lab per week",
-    "assessment": "e.g., Quizzes 20%, Midterm 25%, Final Exam 35%, Projects 20%"
+        "duration": "{duration_weeks} weeks",
+        "format": "{lecture_hours}-hour lecture + {lab_hours}-hour laboratory per week"
+    }},
+    "timeFramePerWeek": {{
+        "lectureHours": {lecture_hours},
+        "laboratoryHours": {lab_hours}
+    }},
+    "graduateAttributes": {{
+        "Character": [
+            "Demonstrates integrity and professional ethics in decision-making."
+        ],
+        "Competence": [
+            "Applies disciplinary knowledge and technical skills to solve real-world problems."
+        ],
+        "Commitment to Service": [
+            "Contributes to community and national development through responsible practice."
+        ]
+    }},
+    "programEducationalObjectives": [
+        {{
+            "id": "PEO-1",
+            "description": "Build and apply strong disciplinary foundations in professional contexts.",
+            "graduateAttributeAlignment": ["Competence"]
+        }},
+        {{
+            "id": "PEO-2",
+            "description": "Lead with ethical character and collaborative professionalism.",
+            "graduateAttributeAlignment": ["Character"]
+        }},
+        {{
+            "id": "PEO-3",
+            "description": "Serve society through innovation and sustainable practice.",
+            "graduateAttributeAlignment": ["Commitment to Service"]
+        }}
   }},
   "programOutcomes": [
-    {{"id": "PLO-1", "description": "Apply knowledge of mathematics and science to engineering or technical problems."}},
-    {{"id": "PLO-2", "description": "Design and conduct experiments, then analyze and interpret data."}},
-    {{"id": "PLO-3", "description": "Design systems, components, or processes to meet desired needs."}},
-    {{"id": "PLO-4", "description": "Communicate effectively in written, oral, and visual forms."}},
-    {{"id": "PLO-5", "description": "Engage in lifelong learning and adapt to emerging technologies."}}
+        {{"id": "PLO-1", "description": "Apply knowledge of mathematics and science to engineering or technical problems.", "peoAlignment": ["PEO-1"]}},
+        {{"id": "PLO-2", "description": "Design and conduct experiments, then analyze and interpret data.", "peoAlignment": ["PEO-1", "PEO-3"]}},
+        {{"id": "PLO-3", "description": "Design systems, components, or processes to meet desired needs.", "peoAlignment": ["PEO-1", "PEO-3"]}},
+        {{"id": "PLO-4", "description": "Communicate effectively in written, oral, and visual forms.", "peoAlignment": ["PEO-2"]}},
+        {{"id": "PLO-5", "description": "Engage in lifelong learning and adapt to emerging technologies.", "peoAlignment": ["PEO-2", "PEO-3"]}}
   ],
   "courseLearningOutcomes": [
     {{
       "id": "CLO-1",
-      "description": "Recall and describe the foundational theories and principles of {topic}.",
+            "description": "Recall and describe the foundational theories and principles of {topic_context or course_title}.",
       "ploAlignment": ["PLO-1", "PLO-5"]
     }},
     {{
       "id": "CLO-2",
-      "description": "Apply core methods and tools of {topic} to analyse structured problems.",
+            "description": "Apply core methods and tools of {topic_context or course_title} to analyse structured problems.",
       "ploAlignment": ["PLO-1", "PLO-2"]
     }},
     {{
       "id": "CLO-3",
-      "description": "Design solutions or artefacts that address practical challenges within {topic}.",
+            "description": "Design solutions or artefacts that address practical challenges within {topic_context or course_title}.",
       "ploAlignment": ["PLO-3"]
     }},
     {{
       "id": "CLO-4",
-      "description": "Evaluate and critique approaches in {topic} using evidence-based reasoning.",
+            "description": "Evaluate and critique approaches in {topic_context or course_title} using evidence-based reasoning.",
       "ploAlignment": ["PLO-2", "PLO-4"]
     }},
     {{
       "id": "CLO-5",
-      "description": "Synthesise knowledge and independently pursue advanced topics in {topic}.",
+            "description": "Synthesise knowledge and independently pursue advanced topics in {topic_context or course_title}.",
       "ploAlignment": ["PLO-4", "PLO-5"]
     }}
   ],
@@ -114,7 +156,7 @@ EXACT JSON SCHEMA (fill ALL fields)
       "weekRange": "1-2",
       "mainTopic": "Introduction and Foundations",
       "subtopics": [
-        "History and context of {topic}",
+                "History and context of {topic_context or course_title}",
         "Core terminology and conceptual framework",
         "Tools and environment setup"
       ],
@@ -122,7 +164,7 @@ EXACT JSON SCHEMA (fill ALL fields)
       "lessonLearningOutcomes": [
         {{
           "id": "LLO-1.1",
-          "description": "Explain the historical development and significance of {topic}.",
+                    "description": "Explain the historical development and significance of {topic_context or course_title}.",
           "cloAlignment": ["CLO-1"]
         }},
         {{
@@ -131,7 +173,7 @@ EXACT JSON SCHEMA (fill ALL fields)
           "cloAlignment": ["CLO-1"]
         }}
       ],
-      "kpi": "Identify and explain the foundational concepts and historical context of {topic}.",
+            "kpi": "Identify and explain the foundational concepts and historical context of {topic_context or course_title}.",
       "learningActivities": [
         "Lecture with contextualised slide deck",
         "Think-pair-share discussion on real-world relevance",
@@ -147,19 +189,22 @@ EXACT JSON SCHEMA (fill ALL fields)
 
 VERIFICATION CHECKLIST — confirm before outputting:
 1. JSON is syntactically valid (no trailing commas, no comments).
-2. weeklyTopics spans exactly 18 weeks.
-3. Every CLO has ploAlignment referencing existing PLO ids.
-4. Every LLO has cloAlignment referencing existing CLO ids.
-5. Every weeklyTopic entry has cloAlignment referencing existing CLO ids.
-6. All required fields present in every object."""
+2. weeklyTopics spans exactly {duration_weeks} weeks.
+3. Every PEO has graduateAttributeAlignment with valid Graduate Attribute section names.
+4. Every PLO has peoAlignment referencing existing PEO ids.
+5. Every CLO has ploAlignment referencing existing PLO ids.
+6. Every LLO has cloAlignment referencing existing CLO ids.
+7. Every weeklyTopic entry has cloAlignment referencing existing CLO ids.
+8. All required fields present in every object."""
 
     return prompt
 
 def validate_json_structure(json_data):
-    """Validate the JSON structure matches the university syllabus schema with CLO/PLO/LLO"""
+    """Validate the JSON structure matches the university syllabus schema with GA/PEO/PLO/CLO/LLO."""
     required_top = ['title', 'courseDescription', 'courseStructure',
+                    'graduateAttributes', 'programEducationalObjectives',
                     'programOutcomes', 'courseLearningOutcomes', 'weeklyTopics']
-    course_structure_fields = ['duration', 'format', 'assessment']
+    course_structure_fields = ['duration', 'format']
     weekly_topic_fields = ['weekRange', 'mainTopic', 'subtopics', 'cloAlignment',
                            'lessonLearningOutcomes', 'kpi', 'learningActivities', 'assessmentStrategies']
 
@@ -180,12 +225,42 @@ def validate_json_structure(json_data):
             logger.error("programOutcomes must be a non-empty list")
             return False
 
+        # Validate graduate attributes
+        ga = json_data['graduateAttributes']
+        required_ga_sections = ['Character', 'Competence', 'Commitment to Service']
+        if not isinstance(ga, dict) or not all(section in ga for section in required_ga_sections):
+            logger.error("graduateAttributes must include Character, Competence, and Commitment to Service")
+            return False
+
+        # Validate PEOs
+        peos = json_data['programEducationalObjectives']
+        if not isinstance(peos, list) or len(peos) < 1:
+            logger.error("programEducationalObjectives must be a non-empty list")
+            return False
+
+        valid_peo_ids = {p['id'] for p in peos if 'id' in p}
+        for peo in peos:
+            if not all(f in peo for f in ['id', 'description', 'graduateAttributeAlignment']):
+                logger.error(f"PEO missing required fields: {peo.get('id', 'unknown')}")
+                return False
+            bad_ga = [a for a in peo['graduateAttributeAlignment'] if a not in required_ga_sections]
+            if bad_ga:
+                logger.warning(f"PEO '{peo['id']}' references unknown Graduate Attributes: {bad_ga}")
+
         # Validate CLOs
         if not isinstance(json_data['courseLearningOutcomes'], list) or len(json_data['courseLearningOutcomes']) < 1:
             logger.error("courseLearningOutcomes must be a non-empty list")
             return False
 
         valid_plo_ids = {p['id'] for p in json_data['programOutcomes']}
+        for plo in json_data['programOutcomes']:
+            if not all(f in plo for f in ['id', 'description', 'peoAlignment']):
+                logger.error(f"PLO missing required fields: {plo.get('id', 'unknown')}")
+                return False
+            bad_peos = [p for p in plo['peoAlignment'] if p not in valid_peo_ids]
+            if bad_peos:
+                logger.warning(f"PLO '{plo['id']}' references unknown PEOs: {bad_peos}")
+
         for clo in json_data['courseLearningOutcomes']:
             if not all(f in clo for f in ['id', 'description', 'ploAlignment']):
                 logger.error(f"CLO missing required fields: {clo.get('id', 'unknown')}")
@@ -240,8 +315,11 @@ def validate_json_structure(json_data):
         return False
 
 def format_json_to_markdown(json_data):
-    """Convert university syllabus JSON (CLO/PLO/LLO schema) to formatted Markdown"""
+    """Convert university syllabus JSON (GA/PEO/PLO/CLO/LLO schema) to formatted Markdown."""
     markdown = f"# {json_data['title']}\n\n"
+
+    if json_data.get('courseCode'):
+        markdown += f"**Course Code:** {json_data['courseCode']}\n\n"
 
     markdown += "## Course Description\n"
     markdown += f"{json_data['courseDescription']}\n\n"
@@ -249,12 +327,28 @@ def format_json_to_markdown(json_data):
     markdown += "## Course Structure\n"
     markdown += f"**Duration:** {json_data['courseStructure']['duration']}\n"
     markdown += f"**Format:** {json_data['courseStructure']['format']}\n"
-    markdown += f"**Assessment:** {json_data['courseStructure']['assessment']}\n\n"
+    markdown += "\n"
+
+    # Graduate Attributes
+    markdown += "## Graduate Attributes\n"
+    for section in ['Character', 'Competence', 'Commitment to Service']:
+        markdown += f"### {section}\n"
+        for item in json_data.get('graduateAttributes', {}).get(section, []):
+            markdown += f"- {item}\n"
+    markdown += "\n"
+
+    # Program Educational Objectives
+    markdown += "## Program Educational Objectives (PEOs) in Relation to Graduate Attributes\n"
+    for peo in json_data.get('programEducationalObjectives', []):
+        ga_refs = ', '.join(peo.get('graduateAttributeAlignment', []))
+        markdown += f"- **{peo['id']}** [{ga_refs}]: {peo['description']}\n"
+    markdown += "\n"
 
     # Programme Learning Outcomes
-    markdown += "## Programme Learning Outcomes (PLOs)\n"
+    markdown += "## Programme Learning Outcomes (PLOs) in Relation to Program Educational Outcomes (PEOs)\n"
     for plo in json_data.get('programOutcomes', []):
-        markdown += f"- **{plo['id']}:** {plo['description']}\n"
+        peo_refs = ', '.join(plo.get('peoAlignment', []))
+        markdown += f"- **{plo['id']}** [{peo_refs}]: {plo['description']}\n"
     markdown += "\n"
 
     # Course Learning Outcomes
@@ -317,8 +411,11 @@ def store_syllabus_in_db(json_data):
 
         course_doc = {
             "title": json_data['title'],
+            "courseCode": json_data.get('courseCode'),
             "description": json_data['courseDescription'],
             "structure": json_data['courseStructure'],
+            "graduateAttributes": json_data.get('graduateAttributes', {}),
+            "programEducationalObjectives": json_data.get('programEducationalObjectives', []),
             "programOutcomes": json_data.get('programOutcomes', []),
             "courseLearningOutcomes": json_data.get('courseLearningOutcomes', []),
             "weeklyTopics": json_data['weeklyTopics'],
@@ -337,13 +434,30 @@ def store_syllabus_in_db(json_data):
 
 def generate_response(prompt_data):
     """Generate response using Gemini"""
-    logger.info(f'Generating syllabus for topic: "{prompt_data["topic"][:50]}..."')
+    logger.info(
+        f'Generating syllabus for course: "{prompt_data.get("courseCode", "")}" '
+        f'"{prompt_data.get("courseTitle", "")[:50]}..."'
+    )
     
     try:
         client = init_gemini()
         
         # Generate structured prompt
-        full_prompt = generate_syllabus_prompt(prompt_data["topic"])
+        course_title = prompt_data.get('courseTitle', 'Untitled Course')
+        course_code = prompt_data.get('courseCode', 'TBD-000')
+        duration_weeks = int(prompt_data.get('durationWeeks', 18) or 18)
+        lecture_hours = int(prompt_data.get('lectureHours', 3) or 3)
+        lab_hours = int(prompt_data.get('labHours', 2) or 2)
+        topic_context = prompt_data.get('topic', '').strip()
+
+        full_prompt = generate_syllabus_prompt(
+            course_title,
+            course_code,
+            duration_weeks,
+            lecture_hours,
+            lab_hours,
+            topic_context
+        )
         
         model_id = "gemini-3.1-flash-lite-preview"
         
