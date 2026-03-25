@@ -135,6 +135,19 @@ def normalize_manual_alignment_data(prompt_data):
 
     return manual_data
 
+def build_fixed_timeframe(duration_weeks, lecture_hours, lab_hours):
+    """Build deterministic timeframe fields from user inputs."""
+    return {
+        'courseStructure': {
+            'duration': f'{duration_weeks} weeks',
+            'format': f'{lecture_hours}-hour lecture + {lab_hours}-hour laboratory per week'
+        },
+        'timeFramePerWeek': {
+            'lectureHours': lecture_hours,
+            'laboratoryHours': lab_hours
+        }
+    }
+
 def generate_syllabus_prompt(
     course_title,
     course_code,
@@ -560,6 +573,7 @@ def generate_response(prompt_data):
         topic_context = prompt_data.get('topic', '').strip()
 
         manual_alignment_data = normalize_manual_alignment_data(prompt_data)
+        fixed_timeframe = build_fixed_timeframe(duration_weeks, lecture_hours, lab_hours)
         manual_alignment_json = json.dumps(manual_alignment_data, ensure_ascii=True, indent=2)
 
         full_prompt = generate_syllabus_prompt(
@@ -614,6 +628,8 @@ def generate_response(prompt_data):
             json_data['graduateAttributes'] = manual_alignment_data['graduateAttributes']
             json_data['programEducationalObjectives'] = manual_alignment_data['programEducationalObjectives']
             json_data['programOutcomes'] = manual_alignment_data['programOutcomes']
+            json_data['courseStructure'] = fixed_timeframe['courseStructure']
+            json_data['timeFramePerWeek'] = fixed_timeframe['timeFramePerWeek']
             
             if not validate_json_structure(json_data):
                 logger.warning('Invalid JSON structure, falling back to raw text')
