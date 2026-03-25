@@ -12,13 +12,42 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <form id="syllabusForm" onsubmit="return false;">
-                        <div class="mb-3">
-                            <label for="topic" class="form-label">Enter Course Topic</label>
-                            <textarea id="topic" name="topic" class="form-control" rows="3"
-                                placeholder="e.g., Introduction to Machine Learning, Web Development 101, etc."
-                                required></textarea>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="courseTitle" class="form-label">Course Title</label>
+                                <input id="courseTitle" name="courseTitle" type="text" class="form-control"
+                                    placeholder="e.g., Introduction to Machine Learning" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="courseCode" class="form-label">Course Code</label>
+                                <input id="courseCode" name="courseCode" type="text" class="form-control"
+                                    placeholder="e.g., CPE 301" required>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="durationWeeks" class="form-label">Duration (Weeks)</label>
+                                <input id="durationWeeks" name="durationWeeks" type="number" min="1" class="form-control"
+                                    value="18" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="lectureHours" class="form-label">Lecture Hours / Week</label>
+                                <input id="lectureHours" name="lectureHours" type="number" min="0" class="form-control"
+                                    value="3" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="labHours" class="form-label">Laboratory Hours / Week</label>
+                                <input id="labHours" name="labHours" type="number" min="0" class="form-control"
+                                    value="2" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="topic" class="form-label">Course Focus / Topic Context</label>
+                                <textarea id="topic" name="topic" class="form-control" rows="2"
+                                    placeholder="Optional context to tailor examples and weekly content."></textarea>
+                            </div>
                         </div>
-                        <button type="submit" id="generate" class="btn btn-primary w-100">
+
+                        <button type="submit" id="generate" class="btn btn-primary w-100 mt-3">
                             <i class="fas fa-magic me-2"></i>Generate Syllabus
                         </button>
                     </form>
