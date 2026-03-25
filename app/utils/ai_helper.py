@@ -154,6 +154,9 @@ def generate_syllabus_prompt(
     duration_weeks,
     lecture_hours,
     lab_hours,
+    prelim_exam_week,
+    midterm_exam_week,
+    final_exam_week,
     topic_context,
     manual_alignment_json
 ):
@@ -187,6 +190,11 @@ GLOBAL STRUCTURE RULES
     - Each entry has 2–4 subtopics.
     - Each entry has a "cloAlignment" array referencing 1–3 CLO ids.
     - Each entry has "learningOutcomesASK" as an array of 2–4 statements and each statement ends with "(A)", "(S)", or "(K)".
+        - Include dedicated examination weeks using these exact week numbers:
+            * Week {prelim_exam_week}: PRELIM EXAMINATION
+            * Week {midterm_exam_week}: MIDTERM EXAMINATION
+            * Week {final_exam_week}: FINAL EXAMINATION
+        - For each examination week, generate appropriate learningOutcomesASK, learningActivities, assessmentStrategies, and resultEvidence for the exam context.
     - The LLO-CLO Alignment Matrix must use learningOutcomesASK statements as row source and entry.cloAlignment as the CLO mapping.
     - Do not create separate LLO objects for matrix mapping.
     - learningActivities: 2–4 specific activities.
@@ -309,6 +317,7 @@ USER-PROVIDED CONTENT (USE THIS INSTEAD OF GENERATING NEW GA/PEO/PLO CONTENT)
 VERIFICATION CHECKLIST — confirm before outputting:
 1. JSON is syntactically valid (no trailing commas, no comments).
 2. weeklyTopics spans exactly {duration_weeks} weeks.
+2.1 Include examination entries at weeks {prelim_exam_week}, {midterm_exam_week}, and {final_exam_week}.
 3. Every PEO has graduateAttributeAlignment with valid Graduate Attribute section names.
 4. Every PLO has peoAlignment referencing existing PEO ids.
 5. Every CLO has ploAlignment referencing existing PLO ids.
@@ -569,6 +578,9 @@ def generate_response(prompt_data):
         duration_weeks = int(prompt_data.get('durationWeeks', 18) or 18)
         lecture_hours = int(prompt_data.get('lectureHours', 3) or 3)
         lab_hours = int(prompt_data.get('labHours', 2) or 2)
+        prelim_exam_week = int(prompt_data.get('prelimExamWeek', 6) or 6)
+        midterm_exam_week = int(prompt_data.get('midtermExamWeek', 12) or 12)
+        final_exam_week = int(prompt_data.get('finalExamWeek', 18) or 18)
         topic_context = prompt_data.get('topic', '').strip()
 
         manual_alignment_data = normalize_manual_alignment_data(prompt_data)
@@ -581,6 +593,9 @@ def generate_response(prompt_data):
             duration_weeks,
             lecture_hours,
             lab_hours,
+            prelim_exam_week,
+            midterm_exam_week,
+            final_exam_week,
             topic_context,
             manual_alignment_json
         )

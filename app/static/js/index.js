@@ -344,6 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
         durationWeeksInput: document.getElementById('durationWeeks'),
         lectureHoursInput: document.getElementById('lectureHours'),
         labHoursInput: document.getElementById('labHours'),
+        prelimExamWeekInput: document.getElementById('prelimExamWeek'),
+        midtermExamWeekInput: document.getElementById('midtermExamWeek'),
+        finalExamWeekInput: document.getElementById('finalExamWeek'),
         topicInput: document.getElementById('topic'),
         gaEditor: document.getElementById('graduateAttributesEditor'),
         peoEditor: document.getElementById('peosEditor'),
@@ -445,6 +448,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const durationWeeks = Number(elements.durationWeeksInput.value) || 18;
         const lectureHours = Number(elements.lectureHoursInput.value) || 3;
         const labHours = Number(elements.labHoursInput.value) || 2;
+        const prelimExamWeek = Number(elements.prelimExamWeekInput.value) || 6;
+        const midtermExamWeek = Number(elements.midtermExamWeekInput.value) || 12;
+        const finalExamWeek = Number(elements.finalExamWeekInput.value) || 18;
         const topic = elements.topicInput.value.trim();
 
         const graduateAttributesInput = collectGraduateAttributesInput();
@@ -475,6 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     durationWeeks,
                     lectureHours,
                     labHours,
+                    prelimExamWeek,
+                    midtermExamWeek,
+                    finalExamWeek,
                     topic,
                     graduateAttributesInput,
                     peosInput,
