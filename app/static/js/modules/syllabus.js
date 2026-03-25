@@ -11,6 +11,9 @@ export const renderSyllabus = (response) => {
     const topics = Array.isArray(json.weeklyTopics) ? json.weeklyTopics : [];
     const clos = Array.isArray(json.courseLearningOutcomes) ? json.courseLearningOutcomes : [];
     const plos = Array.isArray(json.programOutcomes) ? json.programOutcomes : [];
+    const peos = Array.isArray(json.programEducationalObjectives) ? json.programEducationalObjectives : [];
+    const lectureHours = json.timeFramePerWeek?.lectureHours || 3;
+    const labHours = json.timeFramePerWeek?.laboratoryHours || 2;
 
     return `
         <div class="syllabus-wrapper">
@@ -18,12 +21,13 @@ export const renderSyllabus = (response) => {
             <!-- Header -->
             <div class="syllabus-header text-center mb-4">
                 <h1 class="h2 text-primary fw-bold">${json.title || 'Untitled Course'}</h1>
+                <p class="mb-1 fw-semibold text-secondary">${json.courseCode || ''}</p>
                 <p class="text-muted mb-0">${json.courseDescription || ''}</p>
             </div>
 
             <!-- Course Info Cards -->
             <div class="row g-3 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-1">
@@ -34,7 +38,7 @@ export const renderSyllabus = (response) => {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-1">
@@ -45,21 +49,16 @@ export const renderSyllabus = (response) => {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-1">
-                                <i class="fas fa-tasks text-primary me-2"></i>
-                                <span class="fw-semibold small text-uppercase text-muted">Assessment</span>
-                            </div>
-                            <p class="mb-0">${json.courseStructure?.assessment || '—'}</p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
+            <!-- Graduate Attributes -->
+            ${renderGraduateAttributes(json.graduateAttributes || {})}
+
+            <!-- Program Educational Objectives -->
+            ${renderPEOs(peos)}
+
             <!-- Programme Learning Outcomes -->
-            ${renderPLOs(plos)}
+            ${renderPLOs(plos, peos)}
 
             <!-- Course Learning Outcomes + CLO-PLO Matrix -->
             ${renderCLOs(clos, plos)}
@@ -84,7 +83,7 @@ export const renderSyllabus = (response) => {
                             </tr>
                         </thead>
                         <tbody>
-                            ${topics.map((entry, idx) => renderSyllabusRow(entry, idx)).join('')}
+                            ${topics.map((entry, idx) => renderSyllabusRow(entry, idx, lectureHours, labHours)).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -98,15 +97,106 @@ export const renderSyllabus = (response) => {
 };
 
 /* ─────────────────────────────────────────────
+   Graduate Attributes
+───────────────────────────────────────────── */
+const renderGraduateAttributes = (attributes) => {
+    const sections = [
+        { key: 'Character', icon: 'fa-user-shield' },
+        { key: 'Competence', icon: 'fa-brain' },
+        { key: 'Commitment to Service', icon: 'fa-hands-helping' }
+    ];
+
+    if (!sections.some(section => Array.isArray(attributes[section.key]) && attributes[section.key].length)) {
+        return '';
+    }
+
+    return `
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-success text-white py-2">
+                <h2 class="h6 mb-0 text-uppercase">
+                    <i class="fas fa-graduation-cap me-2"></i>Graduate Attributes
+                </h2>
+            </div>
+            <div class="card-body py-3">
+                <div class="row g-3">
+                    ${sections.map(section => {
+                        const items = Array.isArray(attributes[section.key]) ? attributes[section.key] : [];
+                        return `
+                            <div class="col-md-4">
+                                <div class="border rounded p-2 h-100 bg-light">
+                                    <h3 class="h6 mb-2 text-success"><i class="fas ${section.icon} me-1"></i>${section.key}</h3>
+                                    <ul class="small mb-0 ps-3">
+                                        ${items.map(item => `<li>${item}</li>`).join('') || '<li>—</li>'}
+                                    </ul>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+/* ─────────────────────────────────────────────
+   Program Educational Objectives
+───────────────────────────────────────────── */
+const renderPEOs = (peos) => {
+    if (!peos.length) return '';
+
+    return `
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-warning text-dark py-2">
+                <h2 class="h6 mb-0 text-uppercase">
+                    <i class="fas fa-sitemap me-2"></i>Program Educational Objectives (PEOs) in Relation to Graduate Attributes
+                </h2>
+            </div>
+            <div class="card-body py-3">
+                <div class="row g-2">
+                    ${peos.map(peo => `
+                        <div class="col-md-6">
+                            <div class="border rounded p-2 h-100 bg-light">
+                                <div class="d-flex align-items-start mb-1">
+                                    <span class="badge bg-warning text-dark me-2 mt-1 flex-shrink-0">${peo.id || 'PEO'}</span>
+                                    <span class="small">${peo.description || '—'}</span>
+                                </div>
+                                <div>
+                                    ${(peo.graduateAttributeAlignment || [])
+                                        .map(attr => `<span class="badge bg-secondary me-1">${attr}</span>`)
+                                        .join('') || '<span class="small text-muted">No alignment</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+/* ─────────────────────────────────────────────
    Programme Learning Outcomes
 ───────────────────────────────────────────── */
-const renderPLOs = (plos) => {
+const renderPLOs = (plos, peos) => {
     if (!plos.length) return '';
+    const peoIds = (peos || []).map(peo => peo.id);
+
+    const matrixHeader = peoIds.map(pid => `<th class="text-center small">${pid}</th>`).join('');
+    const matrixRows = plos.map(plo => {
+        const aligned = new Set(plo.peoAlignment || []);
+        const cells = peoIds.map(pid => `
+            <td class="text-center ${aligned.has(pid) ? 'matrix-hit' : 'matrix-miss'}">
+                ${aligned.has(pid) ? '<i class="fas fa-check text-success"></i>' : ''}
+            </td>
+        `).join('');
+        return `<tr><td><span class="badge bg-dark plo-badge">${plo.id || 'PLO'}</span></td>${cells}</tr>`;
+    }).join('');
+
     return `
         <div class="card border-0 shadow-sm mb-3">
             <div class="card-header bg-dark text-white py-2">
                 <h2 class="h6 mb-0 text-uppercase">
-                    <i class="fas fa-university me-2"></i>Programme Learning Outcomes (PLOs)
+                    <i class="fas fa-university me-2"></i>Programme Learning Outcomes (PLOs) in Relation to Program Educational Outcomes (PEOs)
                 </h2>
             </div>
             <div class="card-body py-3">
@@ -122,10 +212,32 @@ const renderPLOs = (plos) => {
                                     <label class="form-label form-label-sm small text-muted mb-1">Description (Editable)</label>
                                     <textarea class="form-control form-control-sm plo-editor-text" rows="2">${plo.description || ''}</textarea>
                                 </div>
+                                <div class="mt-2">
+                                    ${(plo.peoAlignment || [])
+                                        .map(peo => `<span class="badge bg-secondary me-1">${peo}</span>`)
+                                        .join('') || '<span class="small text-muted">No PEO alignment</span>'}
+                                </div>
                             </div>
                         </div>
                     `).join('')}
                 </div>
+
+                ${peoIds.length ? `
+                <h3 class="h6 fw-semibold mt-4 mb-2 text-dark">
+                    <i class="fas fa-th me-1"></i>PLO-PEO Alignment Matrix
+                </h3>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm alignment-matrix mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="small">PLO \\ PEO</th>
+                                ${matrixHeader}
+                            </tr>
+                        </thead>
+                        <tbody>${matrixRows}</tbody>
+                    </table>
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -207,7 +319,7 @@ const renderCLOs = (clos, plos) => {
 /* ─────────────────────────────────────────────
    Single schedule row
 ───────────────────────────────────────────── */
-const renderSyllabusRow = (entry, idx) => {
+const renderSyllabusRow = (entry, idx, lectureHours, labHours) => {
     const rowClass = idx % 2 === 0 ? '' : 'table-light';
 
     const subtopicsHtml = (entry.subtopics || []).length
@@ -243,8 +355,8 @@ const renderSyllabusRow = (entry, idx) => {
                 <span class="badge bg-secondary week-badge">Week ${entry.weekRange}</span>
             </td>
             <td class="timeframe-cell small">
-                <span class="badge bg-primary-subtle text-primary timeframe-item">Lecture: 3 hours</span>
-                <span class="badge bg-success-subtle text-success timeframe-item">Laboratory: 2 hours</span>
+                <span class="badge bg-primary-subtle text-primary timeframe-item">Lecture: ${lectureHours} hours</span>
+                <span class="badge bg-success-subtle text-success timeframe-item">Laboratory: ${labHours} hours</span>
             </td>
             <td>
                 <div class="fw-semibold mb-1">${entry.mainTopic}</div>
